@@ -27,7 +27,8 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link href="/products" className="hover:text-primary transition-colors">Nos Guides PDF</Link></li>
               <li><Link href="/ambassador/signup" className="hover:text-primary transition-colors">Devenir Ambassadeur</Link></li>
-              <li><Link href="/api/login" className="hover:text-primary transition-colors">Connexion Espace Membre</Link></li>
+              <li><Link href="/about" className="hover:text-primary transition-colors">À Propos</Link></li>
+              <li><Link href="/faq" className="hover:text-primary transition-colors">FAQ</Link></li>
             </ul>
           </div>
 
@@ -35,9 +36,9 @@ export function Footer() {
           <div>
             <h4 className="font-bold text-foreground mb-4">Légal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">CGV / CGU</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Politique de Confidentialité</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Mentions Légales</a></li>
+              <li><Link href="/terms" className="hover:text-primary transition-colors">CGV / CGU</Link></li>
+              <li><Link href="/terms" className="hover:text-primary transition-colors">Politique de Confidentialité</Link></li>
+              <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
               <li className="text-xs pt-2 opacity-75">PASPA TECH applique les normes RGPD de l'UE</li>
             </ul>
           </div>

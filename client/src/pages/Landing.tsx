@@ -1,177 +1,210 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowRight, Download, Users, Globe2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Download, Users, ShieldCheck, CheckCircle2, Globe } from "lucide-react";
+import { useProducts } from "@/hooks/use-paspa";
+import { 
+  Carousel, 
+  CarouselContent, 
+  CarouselItem, 
+  CarouselNext, 
+  CarouselPrevious 
+} from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
+import React from "react";
+
+const BANNERS = [
+  {
+    image: "https://images.unsplash.com/photo-1592419044706-39796d40f98c?auto=format&fit=crop&q=80&w=1600",
+    title: "Révolution Agricole Africaine",
+    subtitle: "Le savoir technologique au service de la terre."
+  },
+  {
+    image: "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&q=80&w=1600",
+    title: "Innovation Durable",
+    subtitle: "Des techniques modernes pour une production optimisée."
+  },
+  {
+    image: "https://images.unsplash.com/photo-1495107334309-fcf20504a5ab?auto=format&fit=crop&q=80&w=1600",
+    title: "Expertise Locale",
+    subtitle: "Des guides conçus pour les réalités du terrain africain."
+  }
+];
 
 export default function Landing() {
+  const { data: products } = useProducts();
+  const featuredProducts = products?.slice(0, 3);
+  const plugin = React.useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
+
   return (
     <div className="min-h-screen">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-background pt-20 pb-32 lg:pt-32 lg:pb-40">
-        <div className="absolute top-0 right-0 -z-10 w-1/2 h-full bg-gradient-to-l from-primary/5 to-transparent rounded-bl-[100px]" />
-        
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
-            
-            {/* Left Column: Text */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="max-w-2xl"
-            >
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-100 text-orange-700 text-sm font-semibold mb-6">
-                <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                Révolution Agricole Africaine
-              </div>
-              
-              <h1 className="text-4xl lg:text-6xl font-display font-bold text-foreground leading-tight mb-6">
-                L'avenir de l'agriculture <span className="text-gradient-paspa">africaine</span> est ici.
-              </h1>
-              
-              <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-                PASPA TECH connecte le savoir agricole aux entrepreneurs de demain. 
-                Accédez à des guides techniques premium et transformez votre production.
-              </p>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link href="/products">
-                  <Button size="lg" className="bg-gradient-paspa text-white shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30 transition-all hover:-translate-y-1 h-12 px-8 text-lg">
-                    Acheter un Guide
-                  </Button>
-                </Link>
-                <Link href="/ambassador/signup">
-                  <Button size="lg" variant="outline" className="border-2 h-12 px-8 text-lg hover:bg-muted/50">
-                    Devenir Ambassadeur
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* Right Column: Dynamic Images Grid */}
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="relative hidden lg:block"
-            >
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-4 translate-y-8">
-                   {/* Smart farming tablet in field */}
-                  <div className="relative h-64 rounded-2xl overflow-hidden shadow-2xl">
-                    <img 
-                      src="https://pixabay.com/get/g7817b27f31eb0983568ecc127247e10528bf4691b050427ec7a5468370ac9fc61c3ec71f0478d3a39139f021f8f6ddc69e8e3f835ef9c2fcf5fe0a0f977d07ce_1280.jpg" 
-                      alt="Agricultural technology tablet"
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
-                      <span className="text-white font-medium">Technologie</span>
+      {/* Hero / Banner Section */}
+      <section className="relative h-[600px] w-full overflow-hidden">
+        <Carousel 
+          plugins={[plugin.current]}
+          className="w-full h-full"
+          onMouseEnter={plugin.current.stop}
+          onMouseLeave={plugin.current.reset}
+        >
+          <CarouselContent>
+            {BANNERS.map((banner, index) => (
+              <CarouselItem key={index} className="relative h-[600px] w-full">
+                <div className="absolute inset-0 bg-black/40 z-10" />
+                <img 
+                  src={banner.image} 
+                  alt={banner.title}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                <div className="relative z-20 container mx-auto px-4 h-full flex flex-col justify-center items-start">
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                    className="max-w-2xl text-white"
+                  >
+                    <span className="inline-block px-4 py-1 rounded-full bg-primary text-white text-sm font-bold mb-4">
+                      PASPA TECH
+                    </span>
+                    <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
+                      {banner.title}
+                    </h1>
+                    <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-xl">
+                      {banner.subtitle}
+                    </p>
+                    <div className="flex gap-4">
+                      <Link href="/products">
+                        <Button size="lg" className="bg-primary hover:bg-primary/90 text-white h-12 px-8">
+                          Voir les Guides
+                        </Button>
+                      </Link>
                     </div>
-                  </div>
-                  {/* African farmer smiling */}
-                  <div className="relative h-48 rounded-2xl overflow-hidden shadow-2xl">
-                    <img 
-                      src="https://images.unsplash.com/photo-1592419044706-39796d40f98c?auto=format&fit=crop&q=80&w=800" 
-                      alt="Modern African Farmer"
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
-                    />
-                  </div>
+                  </motion.div>
                 </div>
-                <div className="space-y-4">
-                  {/* Drone spraying field */}
-                  <div className="relative h-48 rounded-2xl overflow-hidden shadow-2xl">
-                    <img 
-                      src="https://images.unsplash.com/photo-1495107334309-fcf20504a5ab?auto=format&fit=crop&q=80&w=800" 
-                      alt="Crop Growth"
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
-                    />
-                  </div>
-                  {/* Greenhouse high tech */}
-                  <div className="relative h-64 rounded-2xl overflow-hidden shadow-2xl">
-                    <img 
-                      src="https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&q=80&w=800" 
-                      alt="Greenhouse innovation"
-                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
-                      <span className="text-white font-medium">Innovation</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Floating decorative elements */}
-              <div className="absolute -top-10 -right-10 w-32 h-32 bg-secondary/10 rounded-full blur-3xl" />
-              <div className="absolute bottom-10 -left-10 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-            </motion.div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="hidden md:block">
+            <CarouselPrevious className="left-8 text-white bg-white/20 hover:bg-white/40 border-none" />
+            <CarouselNext className="right-8 text-white bg-white/20 hover:bg-white/40 border-none" />
           </div>
-        </div>
+        </Carousel>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-muted/30">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl font-display font-bold mb-4">Pourquoi PASPA TECH ?</h2>
-            <p className="text-muted-foreground">
-              Une plateforme conçue pour les réalités du terrain africain, alliant expertise technique et opportunités économiques.
-            </p>
+      {/* Featured Products Section */}
+      <section className="py-24 bg-background">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+            <div className="max-w-2xl">
+              <h2 className="text-3xl md:text-4xl font-display font-bold mb-4 text-primary">Nos Guides PDF Phares</h2>
+              <p className="text-muted-foreground text-lg">
+                Découvrez nos guides les plus populaires, conçus par des experts pour maximiser vos rendements.
+              </p>
+            </div>
+            <Link href="/products">
+              <Button variant="ghost" className="group gap-2 text-primary font-bold">
+                Tous les guides <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+              </Button>
+            </Link>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            <FeatureCard 
-              icon={Download}
-              title="Savoir Accessible"
-              description="Des guides PDF techniques complets (Oignon, Tomate, etc.) téléchargeables instantanément pour seulement 500 FCFA."
-            />
-            <FeatureCard 
-              icon={Users}
-              title="Système Ambassadeur"
-              description="Gagnez 70% de commission sur chaque vente. Rejoignez notre réseau d'ambassadeurs à travers l'Afrique."
-            />
-            <FeatureCard 
-              icon={ShieldCheck}
-              title="Paiement Sécurisé"
-              description="Payez simplement via Mobile Money, Flutterwave ou Paystack. Transactions cryptées et sécurisées."
-            />
+            {featuredProducts?.map((product) => (
+              <motion.div
+                key={product.id}
+                whileHover={{ y: -10 }}
+                className="group relative bg-card rounded-2xl overflow-hidden border border-border shadow-lg"
+              >
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img 
+                    src={product.coverImageUrl || "https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&q=80&w=800"} 
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  <div className="absolute top-4 right-4 bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                    {product.price} FCFA
+                  </div>
+                </div>
+                <div className="p-6">
+                  <h3 className="text-xl font-bold mb-2 group-hover:text-primary transition-colors">{product.name}</h3>
+                  <p className="text-muted-foreground text-sm line-clamp-2 mb-6">
+                    {product.description}
+                  </p>
+                  <Link href={`/products`}>
+                    <Button className="w-full bg-secondary hover:bg-secondary/90 text-white gap-2">
+                      <Download className="w-4 h-4" /> Acheter le Guide
+                    </Button>
+                  </Link>
+                </div>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-24 bg-gradient-paspa relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] mix-blend-overlay" />
-        
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <h2 className="text-3xl md:text-5xl font-display font-bold text-white mb-6">
-            Prêt à transformer votre agriculture ?
-          </h2>
-          <p className="text-white/80 text-lg mb-10 max-w-2xl mx-auto">
-            Accédez dès maintenant à nos guides experts ou commencez à générer des revenus en partageant le savoir.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-             <Link href="/products">
-                <Button size="lg" className="bg-white text-primary hover:bg-white/90 font-bold h-14 px-8 shadow-xl">
-                  Voir les Guides
+      {/* Stats / Trust Section */}
+      <section className="py-20 bg-primary text-white">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <div>
+              <div className="text-4xl font-bold mb-2">50k+</div>
+              <div className="text-white/80">PDFs Vendus</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">1000+</div>
+              <div className="text-white/80">Ambassadeurs</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">15+</div>
+              <div className="text-white/80">Pays Africains</div>
+            </div>
+            <div>
+              <div className="text-4xl font-bold mb-2">98%</div>
+              <div className="text-white/80">Satisfaction</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* About Brief */}
+      <section className="py-24">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="relative">
+              <div className="absolute -inset-4 bg-orange-500/10 rounded-3xl -rotate-3" />
+              <img 
+                src="https://images.unsplash.com/photo-1590001158193-7903d2e5e16e?auto=format&fit=crop&q=80&w=800" 
+                alt="About Paspa Tech"
+                className="relative rounded-2xl shadow-2xl z-10"
+              />
+            </div>
+            <div>
+              <h2 className="text-3xl md:text-5xl font-display font-bold mb-6 text-primary">Le savoir-faire au service de l'Afrique</h2>
+              <p className="text-lg text-muted-foreground mb-8">
+                PASPA TECH n'est pas qu'une plateforme de vente. C'est un écosystème conçu pour autonomiser les agriculteurs africains à travers le partage de connaissances de pointe.
+              </p>
+              <ul className="space-y-4 mb-10">
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="text-secondary w-6 h-6" />
+                  <span>Expertise technique de terrain</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="text-secondary w-6 h-6" />
+                  <span>Accessibilité financière (500 FCFA)</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <CheckCircle2 className="text-secondary w-6 h-6" />
+                  <span>Modèle économique inclusif pour ambassadeurs</span>
+                </li>
+              </ul>
+              <Link href="/about">
+                <Button size="lg" variant="outline" className="border-primary text-primary hover:bg-primary/5">
+                  En savoir plus sur nous
                 </Button>
-             </Link>
+              </Link>
+            </div>
           </div>
         </div>
       </section>
-    </div>
-  );
-}
-
-function FeatureCard({ icon: Icon, title, description }: { icon: any, title: string, description: string }) {
-  return (
-    <div className="bg-card p-8 rounded-2xl border border-border/50 shadow-lg shadow-black/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6">
-        <Icon className="w-6 h-6 text-primary" />
-      </div>
-      <h3 className="text-xl font-bold mb-3">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed">
-        {description}
-      </p>
     </div>
   );
 }

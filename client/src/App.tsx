@@ -13,6 +13,10 @@ import Products from "@/pages/Products";
 import AmbassadorSignup from "@/pages/AmbassadorSignup";
 import AmbassadorDashboard from "@/pages/AmbassadorDashboard";
 import AdminDashboard from "@/pages/AdminDashboard";
+import About from "@/pages/About";
+import Contact from "@/pages/Contact";
+import FAQ from "@/pages/FAQ";
+import Terms from "@/pages/Terms";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -23,6 +27,10 @@ function Router() {
       <Route path="/ambassador/signup" component={AmbassadorSignup} />
       <Route path="/ambassador/dashboard" component={AmbassadorDashboard} />
       <Route path="/admin" component={AdminDashboard} />
+      <Route path="/about" component={About} />
+      <Route path="/contact" component={Contact} />
+      <Route path="/faq" component={FAQ} />
+      <Route path="/terms" component={Terms} />
       <Route component={NotFound} />
     </Switch>
   );

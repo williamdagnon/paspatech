@@ -26,6 +26,8 @@ export function Navigation() {
   
   const navLinks = [
     { href: "/products", label: "Guides PDF", icon: ShoppingBag },
+    { href: "/about", label: "À Propos", icon: Globe },
+    { href: "/contact", label: "Contact", icon: Mail },
     ...(isAmbassador ? [{ href: "/ambassador/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
     ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: ShieldCheck }] : []),
     ...(!user ? [{ href: "/ambassador/signup", label: "Devenir Ambassadeur", icon: UserPlus }] : []),
