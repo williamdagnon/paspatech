@@ -1,38 +1,115 @@
-import { type User, type InsertUser } from "@shared/schema";
-import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { db } from "./db";
+import { 
+  userProfiles, products, orders, commissions, 
+  type UserProfile, type InsertUserProfile, 
+  type Product, type Order, type Commission 
+} from "@shared/schema";
+import { users } from "@shared/models/auth";
+import { eq, sql, and } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  // User Profile
+  getUserProfile(userId: string): Promise<UserProfile | undefined>;
+  createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  updateUserProfile(userId: string, updates: Partial<InsertUserProfile>): Promise<UserProfile>;
+  getAllAmbassadors(): Promise<(UserProfile & { email: string | null })[]>;
+  
+  // Products
+  getProducts(): Promise<Product[]>;
+  getProduct(id: number): Promise<Product | undefined>;
+  
+  // Orders
+  createOrder(order: any): Promise<Order>;
+  getOrdersByUser(userId: string): Promise<Order[]>;
+  getAllOrders(): Promise<Order[]>;
+  getZoneSales(zone: string): Promise<number>;
+  
+  // Commissions
+  getCommissionsByAmbassador(ambassadorId: string): Promise<Commission[]>;
+  createCommission(commission: any): Promise<Commission>;
+  getUnpaidCommissions(): Promise<Commission[]>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
+export class DatabaseStorage implements IStorage {
+  async getUserProfile(userId: string): Promise<UserProfile | undefined> {
+    const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
+    return profile;
   }
 
-  async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+  async createUserProfile(profile: InsertUserProfile): Promise<UserProfile> {
+    const [newProfile] = await db.insert(userProfiles).values(profile).returning();
+    return newProfile;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+  async updateUserProfile(userId: string, updates: Partial<InsertUserProfile>): Promise<UserProfile> {
+    const [updated] = await db.update(userProfiles)
+      .set(updates)
+      .where(eq(userProfiles.userId, userId))
+      .returning();
+    return updated;
   }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+  async getAllAmbassadors(): Promise<(UserProfile & { email: string | null })[]> {
+    const result = await db.select({
+      id: userProfiles.id,
+      userId: userProfiles.userId,
+      role: userProfiles.role,
+      zone: userProfiles.zone,
+      phoneNumber: userProfiles.phoneNumber,
+      isApproved: userProfiles.isApproved,
+      country: userProfiles.country,
+      quotaUsed: userProfiles.quotaUsed,
+      createdAt: userProfiles.createdAt,
+      email: users.email
+    })
+    .from(userProfiles)
+    .leftJoin(users, eq(userProfiles.userId, users.id))
+    .where(eq(userProfiles.role, "ambassador"));
+    
+    return result;
+  }
+
+  async getProducts(): Promise<Product[]> {
+    return await db.select().from(products).where(eq(products.isActive, true));
+  }
+
+  async getProduct(id: number): Promise<Product | undefined> {
+    const [product] = await db.select().from(products).where(eq(products.id, id));
+    return product;
+  }
+
+  async createOrder(orderData: any): Promise<Order> {
+    const [order] = await db.insert(orders).values(orderData).returning();
+    return order;
+  }
+
+  async getOrdersByUser(userId: string): Promise<Order[]> {
+    return await db.select().from(orders).where(eq(orders.userId, userId));
+  }
+
+  async getAllOrders(): Promise<Order[]> {
+    return await db.select().from(orders);
+  }
+
+  async getZoneSales(zone: string): Promise<number> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+      .from(orders)
+      .where(and(eq(orders.zone, zone), eq(orders.status, "completed")));
+    return Number(result[0]?.count || 0);
+  }
+
+  async getCommissionsByAmbassador(ambassadorId: string): Promise<Commission[]> {
+    return await db.select().from(commissions).where(eq(commissions.ambassadorId, ambassadorId));
+  }
+
+  async createCommission(commissionData: any): Promise<Commission> {
+    const [commission] = await db.insert(commissions).values(commissionData).returning();
+    return commission;
+  }
+
+  async getUnpaidCommissions(): Promise<Commission[]> {
+    return await db.select().from(commissions).where(eq(commissions.status, "pending"));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
