@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { ArrowRight, Download, Users, ShieldCheck, CheckCircle2, Globe } from "lucide-react";
+import { ArrowRight, Download, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { useProducts } from "@/hooks/use-paspa";
 import { 
   Carousel, 
