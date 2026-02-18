@@ -16,7 +16,9 @@ import AdminDashboard from "@/pages/AdminDashboard";
 import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import FAQ from "@/pages/FAQ";
-import Terms from "@/pages/Terms";
+import CGV from "@/pages/CGV";
+import MentionsLegales from "@/pages/MentionsLegales";
+import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -30,7 +32,9 @@ function Router() {
       <Route path="/about" component={About} />
       <Route path="/contact" component={Contact} />
       <Route path="/faq" component={FAQ} />
-      <Route path="/terms" component={Terms} />
+      <Route path="/cgv" component={CGV} />
+      <Route path="/mentions-legales" component={MentionsLegales} />
+      <Route path="/privacy" component={PrivacyPolicy} />
       <Route component={NotFound} />
     </Switch>
   );

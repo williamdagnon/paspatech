@@ -158,7 +158,7 @@ function ProductCard({ product }: { product: any }) {
                           >
                             <FormItem>
                               <FormControl>
-                                <RadioGroupItem value="mobile_money" className="peer sr-only" />
+                                <RadioGroupItem value="mobile_money" id="mobile_money" className="peer sr-only" />
                               </FormControl>
                               <Label
                                 htmlFor="mobile_money"
@@ -170,7 +170,7 @@ function ProductCard({ product }: { product: any }) {
                             </FormItem>
                             <FormItem>
                               <FormControl>
-                                <RadioGroupItem value="flutterwave" className="peer sr-only" />
+                                <RadioGroupItem value="flutterwave" id="flutterwave" className="peer sr-only" />
                               </FormControl>
                               <Label
                                 htmlFor="flutterwave"
@@ -182,7 +182,7 @@ function ProductCard({ product }: { product: any }) {
                             </FormItem>
                             <FormItem>
                               <FormControl>
-                                <RadioGroupItem value="paystack" className="peer sr-only" />
+                                <RadioGroupItem value="paystack" id="paystack" className="peer sr-only" />
                               </FormControl>
                               <Label
                                 htmlFor="paystack"

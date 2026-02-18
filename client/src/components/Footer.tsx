@@ -36,9 +36,9 @@ export function Footer() {
           <div>
             <h4 className="font-bold text-foreground mb-4">Légal</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><Link href="/terms" className="hover:text-primary transition-colors">CGV / CGU</Link></li>
-              <li><Link href="/terms" className="hover:text-primary transition-colors">Politique de Confidentialité</Link></li>
-              <li><Link href="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
+              <li><Link href="/cgv" className="hover:text-primary transition-colors">CGV</Link></li>
+              <li><Link href="/privacy" className="hover:text-primary transition-colors">Politique de Confidentialité</Link></li>
+              <li><Link href="/mentions-legales" className="hover:text-primary transition-colors">Mentions Légales</Link></li>
               <li className="text-xs pt-2 opacity-75">PASPA TECH applique les normes RGPD de l'UE</li>
             </ul>
           </div>
