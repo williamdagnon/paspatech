@@ -1,0 +1,70 @@
+PROMPT FINAL – AI HOSTINGUEUR / PASPA TECH (3 IMAGES DYNAMIQUES)
+Objectif : Créer un site professionnel PASPA TECH avec toutes les fonctionnalités, deux zones d’ambassadeurs, PDF protégés et paiements automatiques. Trois images animées d’accueil représentent l’Afrique en révolution africaine.
+1️⃣ Branding et design
+Logo : fourni par le propriétaire (ne pas créer de logo)
+Couleurs : vert et orange, fond blanc
+Images d’accueil animées : trois images dynamiques représentant l’Afrique en révolution africaine
+Interface responsive desktop et mobile
+2️⃣ Pages et structure
+Pages : Accueil, Produits, À propos, Contact
+Téléchargement automatique des PDF après paiement
+Intégration des textes fournis par PASPA TECH : FAQ, CGV, Politique de confidentialité RGPD, Autorisation parentale mineurs, Message légal après paiement
+3️⃣ Système Ambassadeur
+Deux zones distinctes :
+Zone 1 : Afrique subsaharienne
+Zone 2 : Autres pays africains sélectionnés (ex : Maroc, Tunisie…)
+Chaque ambassadeur ne voit que sa zone, ignore qu’il fait partie d’une zone
+Quota séparé : 50 000 PDF maximum par zone
+Commission : 70% pour l’ambassadeur, 30% pour PASPA TECH
+Paiement automatique en monnaie locale (500 F CFA par PDF)
+Création de compte obligatoire avant de devenir ambassadeur
+Collecte des informations : nom, prénom, email, téléphone
+Mot de passe long et sécurisé généré automatiquement
+Tableau de bord discret visible uniquement par le propriétaire
+Possibilité pour le propriétaire de choisir le prochain ambassadeur manuellement
+Supervision complète pour empêcher toute tricherie, y compris via VPN
+4️⃣ PDF et contenus
+PDFs fournis par le propriétaire : oignon, piment vert, piment rouge, patate, manioc, tomate, gingembre
+Chaque PDF doit inclure interdiction de revente et propriété exclusive PASPA TECH
+Téléchargement immédiat après paiement
+5️⃣ Paiements et agrégateurs
+Intégrer Flutterwave et autres agrégateurs couvrant l’Afrique
+Frais de retrait appliqués automatiquement
+Montant reçu et taux de change en F CFA affichés directement
+Paiements collectés par zone ne doivent jamais être mélangés
+6️⃣ Sécurité et conformité
+HTTPS obligatoire
+Mot de passe crypté et sécurisé
+Protection contre XSS, SQL Injection et piratage
+Journalisation des connexions et transactions
+Sauvegarde automatique
+RGPD :
+“PASPA TECH applique volontairement les normes de protection des données de l’Union Européenne (RGPD), avec DPO interne.”
+Le système doit empêcher la reproduction du modèle PASPA TECH
+7️⃣ Fonctionnalités techniques
+Tableau de bord complet pour le propriétaire : suivi par pays et zone, commissions, ventes, quota restant
+Système d’affiliation basé sur recommandation par ambassadeur
+Automatisation complète : paiement, quotas, attribution des commissions
+Prévoir montée en puissance automatique du serveur si trafic ou ventes augmentent
+Compatible cloud/VPS
+Les paiements de Zone 2 sont isolés et ne mélangent pas fonds avec Zone 1
+8️⃣ Expérience utilisateur
+Achat PDF simple pour tous les utilisateurs
+Les utilisateurs non ambassadeurs peuvent acheter sans créer de compte ambassadeur
+Validation du contrat obligatoire pour devenir ambassadeur
+Téléchargement immédiat après paiement
+9️⃣ Instructions pour AI / Hostingueur
+Intégrer tous les textes fournis par le propriétaire
+Prévoir deux zones d’ambassadeurs distinctes avec les mêmes fonctionnalités pour chaque zone
+Intégration PDF : protection contre revente et propriété exclusive PASPA TECH
+Tableau de bord et suivi par zone
+Paiements automatiques par zone, quota 50 000 PDF par zone
+Système évolutif pour toute l’Afrique, mais commencer sur serveur léger
+Trois images animées d’accueil représentant l’Afrique en révolution africaine
+✅ Livrables attendus :
+Site complet avec toutes les fonctionnalités ci-dessus
+Intégration des PDF avec interdiction de revente
+Tableau de bord discret pour le propriétaire
+Automatisation des commissions et paiements
+Sécurisé et conforme RGPD
+Prêt pour montée en puissance serveur
