@@ -3,11 +3,11 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { CartProvider } from "@/hooks/use-cart";
 
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 
-// Pages
 import Landing from "@/pages/Landing";
 import Products from "@/pages/Products";
 import AmbassadorSignup from "@/pages/AmbassadorSignup";
@@ -20,6 +20,8 @@ import CGV from "@/pages/CGV";
 import MentionsLegales from "@/pages/MentionsLegales";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import Login from "@/pages/Login";
+import Register from "@/pages/Register";
+import Cart from "@/pages/Cart";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -28,6 +30,8 @@ function Router() {
       <Route path="/" component={Landing} />
       <Route path="/products" component={Products} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
+      <Route path="/cart" component={Cart} />
       <Route path="/ambassador/signup" component={AmbassadorSignup} />
       <Route path="/ambassador/dashboard" component={AmbassadorDashboard} />
       <Route path="/admin" component={AdminDashboard} />
@@ -46,14 +50,16 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <div className="flex flex-col min-h-screen bg-background">
-          <Navigation />
-          <main className="flex-1">
-            <Router />
-          </main>
-          <Footer />
-        </div>
-        <Toaster />
+        <CartProvider>
+          <div className="flex flex-col min-h-screen bg-background">
+            <Navigation />
+            <main className="flex-1">
+              <Router />
+            </main>
+            <Footer />
+          </div>
+          <Toaster />
+        </CartProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );

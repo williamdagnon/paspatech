@@ -8,6 +8,11 @@ import { users } from "@shared/models/auth";
 import { eq, sql, and } from "drizzle-orm";
 
 export interface IStorage {
+  // Users
+  getUserById(id: string): Promise<typeof users.$inferSelect | undefined>;
+  getUserByEmail(email: string): Promise<typeof users.$inferSelect | undefined>;
+  createUser(data: typeof users.$inferInsert): Promise<typeof users.$inferSelect>;
+
   // User Profile
   getUserProfile(userId: string): Promise<UserProfile | undefined>;
   createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
@@ -31,6 +36,21 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  async getUserById(id: string) {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async getUserByEmail(email: string) {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(data: typeof users.$inferInsert) {
+    const [user] = await db.insert(users).values(data).returning();
+    return user;
+  }
+
   async getUserProfile(userId: string): Promise<UserProfile | undefined> {
     const [profile] = await db.select().from(userProfiles).where(eq(userProfiles.userId, userId));
     return profile;
@@ -53,11 +73,15 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select({
       id: userProfiles.id,
       userId: userProfiles.userId,
+      firstName: userProfiles.firstName,
+      lastName: userProfiles.lastName,
       role: userProfiles.role,
       zone: userProfiles.zone,
       phoneNumber: userProfiles.phoneNumber,
       isApproved: userProfiles.isApproved,
       country: userProfiles.country,
+      acceptedTerms: userProfiles.acceptedTerms,
+      acceptedNoResale: userProfiles.acceptedNoResale,
       quotaUsed: userProfiles.quotaUsed,
       createdAt: userProfiles.createdAt,
       email: users.email

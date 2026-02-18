@@ -1,13 +1,31 @@
-import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
-import { Sprout, LogIn, UserPlus, ShieldCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAuth } from "@/hooks/use-auth";
-import { useLocation } from "wouter";
-import { useEffect } from "react";
+import { useLocation, Link } from "wouter";
+import { Loader2, Sprout, LogIn, ShieldCheck, Eye, EyeOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
+
+const loginSchema = z.object({
+  email: z.string().email("Adresse email invalide"),
+  password: z.string().min(1, "Mot de passe requis"),
+});
 
 export default function Login() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, login, isLoggingIn } = useAuth();
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: "", password: "" },
+  });
 
   useEffect(() => {
     if (!isLoading && isAuthenticated) {
@@ -15,13 +33,23 @@ export default function Login() {
     }
   }, [isAuthenticated, isLoading, setLocation]);
 
+  async function onSubmit(data: z.infer<typeof loginSchema>) {
+    try {
+      await login(data);
+      toast({ title: "Connexion réussie", description: "Bienvenue sur PASPA TECH !" });
+      setLocation("/");
+    } catch (err: any) {
+      toast({ title: "Erreur", description: err.message, variant: "destructive" });
+    }
+  }
+
   if (isLoading) return null;
 
   return (
     <div className="min-h-[calc(100vh-80px)] flex">
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary via-primary/90 to-secondary relative overflow-hidden items-center justify-center">
         <div className="absolute inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]" />
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
@@ -30,12 +58,10 @@ export default function Login() {
           <div className="w-20 h-20 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-8">
             <Sprout className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-4xl font-display font-bold text-white mb-6">
-            PASPA TECH
-          </h1>
+          <h1 className="text-4xl font-display font-bold text-white mb-6">PASPA TECH</h1>
           <p className="text-white/80 text-lg leading-relaxed">
-            Rejoignez la plateforme qui transforme l'agriculture africaine. 
-            Accédez à des guides experts et devenez ambassadeur pour générer des revenus.
+            La plateforme qui transforme l'agriculture africaine.
+            Accédez à des guides experts et devenez ambassadeur.
           </p>
           <div className="mt-10 flex items-center justify-center gap-6 text-white/60 text-sm">
             <div className="flex items-center gap-2">
@@ -51,7 +77,7 @@ export default function Login() {
       </div>
 
       <div className="flex-1 flex items-center justify-center p-8">
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.6 }}
@@ -65,63 +91,97 @@ export default function Login() {
           </div>
 
           <div>
-            <h2 className="text-3xl font-display font-bold text-foreground mb-2">Connexion / Inscription</h2>
+            <h2 className="text-3xl font-display font-bold text-foreground mb-2">Connexion</h2>
             <p className="text-muted-foreground">
-              Connectez-vous à votre compte ou créez-en un nouveau en quelques secondes.
+              Entrez vos identifiants pour accéder à votre compte.
             </p>
           </div>
 
-          <div className="space-y-4">
-            <Button 
-              size="lg"
-              className="w-full h-14 text-lg bg-primary gap-3"
-              onClick={() => window.location.href = "/api/login"}
-              data-testid="button-login-google"
-            >
-              <LogIn className="w-5 h-5" />
-              Se connecter avec Google
-            </Button>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adresse email</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="votre@email.com" {...field} data-testid="input-login-email" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <Button 
-              size="lg"
-              variant="outline"
-              className="w-full h-14 text-lg gap-3"
-              onClick={() => window.location.href = "/api/login"}
-              data-testid="button-login-email"
-            >
-              <UserPlus className="w-5 h-5" />
-              Créer un compte / Email
-            </Button>
-          </div>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mot de passe</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Votre mot de passe"
+                          {...field}
+                          data-testid="input-login-password"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-0 top-0"
+                          onClick={() => setShowPassword(!showPassword)}
+                          data-testid="button-toggle-password"
+                        >
+                          {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <Button type="submit" className="w-full bg-primary h-12 text-base" disabled={isLoggingIn} data-testid="button-submit-login">
+                {isLoggingIn ? <Loader2 className="animate-spin" /> : (
+                  <>
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Se connecter
+                  </>
+                )}
+              </Button>
+            </form>
+          </Form>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-background px-4 text-muted-foreground">ou</span>
+              <span className="bg-background px-4 text-muted-foreground">Pas encore de compte ?</span>
             </div>
           </div>
 
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              Vous n'avez pas encore de compte ? L'inscription est automatique lors de votre première connexion.
-            </p>
-            <Button 
-              variant="ghost"
-              className="text-primary"
-              onClick={() => setLocation("/ambassador/signup")}
-              data-testid="link-become-ambassador"
-            >
-              Devenir Ambassadeur et gagner 70% de commission
-            </Button>
+          <div className="flex flex-col gap-3">
+            <Link href="/register">
+              <Button variant="outline" className="w-full h-12" data-testid="link-register">
+                Créer un compte acheteur
+              </Button>
+            </Link>
+            <Link href="/ambassador/signup">
+              <Button variant="ghost" className="w-full text-primary" data-testid="link-ambassador-signup">
+                Devenir Ambassadeur (70% commission)
+              </Button>
+            </Link>
           </div>
 
           <p className="text-xs text-center text-muted-foreground">
             En vous connectant, vous acceptez nos{" "}
-            <a href="/cgv" className="underline hover:text-primary">CGV</a>{" "}
+            <Link href="/cgv" className="underline hover:text-primary">CGV</Link>{" "}
             et notre{" "}
-            <a href="/privacy" className="underline hover:text-primary">Politique de Confidentialité</a>.
+            <Link href="/privacy" className="underline hover:text-primary">Politique de Confidentialité</Link>.
           </p>
         </motion.div>
       </div>

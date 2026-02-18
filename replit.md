@@ -24,8 +24,11 @@ Preferred communication style: Simple, everyday language.
 
 ### Pages
 - Landing (hero carousel, featured products)
-- Products (PDF guide catalog with purchase flow)
-- Ambassador Signup (zone selection, profile creation)
+- Products (PDF guide catalog with "Add to Cart" buttons)
+- Cart (shopping cart with quantity management, payment method selection, checkout)
+- Login (email/password login for all users)
+- Register (customer registration with email/password)
+- Ambassador Signup (zone selection, profile creation, email/password registration)
 - Ambassador Dashboard (sales stats, referral link, charts)
 - Admin Dashboard (platform-wide stats by zone, ambassador management/approval)
 - About, Contact, FAQ, Terms/Privacy (static content pages)
@@ -39,11 +42,12 @@ Preferred communication style: Simple, everyday language.
 - **Build**: Custom build script using esbuild (server) + Vite (client), outputs to `dist/`
 
 ### Authentication
-- **Replit Auth** via OpenID Connect (OIDC)
-- Passport.js with openid-client strategy
-- Sessions stored in PostgreSQL via `connect-pg-simple`
-- Auth middleware: `isAuthenticated` guard for protected routes
-- User table and session table are mandatory for Replit Auth (do not drop)
+- **Custom email/password** authentication using bcryptjs for password hashing
+- Sessions stored in PostgreSQL via `connect-pg-simple` (express-session)
+- Auth API routes: `/api/auth/register`, `/api/auth/login`, `/api/auth/register-ambassador`, `/api/auth/logout`, `/api/auth/user`
+- Auth middleware: `isAuthenticated` guard for protected routes (checks `req.session.userId`)
+- Three registration flows: customer (simple), ambassador (extended with zone/phone/contracts), unified login
+- Shopping cart: Client-side React Context (`CartProvider` in `use-cart.tsx`), persists in memory during session
 
 ### Database
 - **Database**: PostgreSQL (required, connected via `DATABASE_URL` env var)
