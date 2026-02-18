@@ -69,14 +69,14 @@ export function Navigation() {
               <Button 
                 variant="ghost" 
                 onClick={() => logout()}
-                className="gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                className="gap-2 text-muted-foreground"
               >
                 <LogOut className="h-4 w-4" />
                 Déconnexion
               </Button>
             ) : (
-              <Link href="/api/login">
-                <Button className="bg-gradient-paspa shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all hover:-translate-y-0.5">
+              <Link href="/login">
+                <Button className="bg-primary" data-testid="button-nav-login">
                   Connexion
                 </Button>
               </Link>
@@ -129,8 +129,8 @@ export function Navigation() {
                   Déconnexion
                 </Button>
               ) : (
-                <Link href="/api/login" onClick={() => setIsOpen(false)}>
-                  <Button className="w-full bg-gradient-paspa">
+                <Link href="/login" onClick={() => setIsOpen(false)}>
+                  <Button className="w-full bg-primary" data-testid="button-mobile-login">
                     Connexion
                   </Button>
                 </Link>

@@ -13,12 +13,16 @@ import { users } from "./models/auth";
 export const userProfiles = pgTable("user_profiles", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull().references(() => users.id),
+  firstName: text("first_name"),
+  lastName: text("last_name"),
   role: text("role", { enum: ["admin", "ambassador", "customer"] }).default("customer").notNull(),
-  zone: text("zone", { enum: ["zone1", "zone2"] }), // zone1: Sub-Saharan, zone2: Others
+  zone: text("zone", { enum: ["zone1", "zone2"] }),
   phoneNumber: text("phone_number"),
-  isApproved: boolean("is_approved").default(false), // For ambassadors
+  isApproved: boolean("is_approved").default(false),
   country: text("country"),
-  quotaUsed: integer("quota_used").default(0), // Max 50,000 per zone (aggregated)
+  acceptedTerms: boolean("accepted_terms").default(false),
+  acceptedNoResale: boolean("accepted_no_resale").default(false),
+  quotaUsed: integer("quota_used").default(0),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

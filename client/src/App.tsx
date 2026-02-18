@@ -19,6 +19,7 @@ import FAQ from "@/pages/FAQ";
 import CGV from "@/pages/CGV";
 import MentionsLegales from "@/pages/MentionsLegales";
 import PrivacyPolicy from "@/pages/PrivacyPolicy";
+import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -26,6 +27,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Landing} />
       <Route path="/products" component={Products} />
+      <Route path="/login" component={Login} />
       <Route path="/ambassador/signup" component={AmbassadorSignup} />
       <Route path="/ambassador/dashboard" component={AmbassadorDashboard} />
       <Route path="/admin" component={AdminDashboard} />
