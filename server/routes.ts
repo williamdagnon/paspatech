@@ -8,6 +8,28 @@ import bcrypt from "bcryptjs";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
 import pg from "pg";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const uploadDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, uploadDir),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname);
+      cb(null, `cover_${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, allowed.includes(ext));
+  },
+});
 import { eq } from "drizzle-orm";
 
 const registerSchema = z.object({
@@ -51,6 +73,22 @@ export async function registerRoutes(
       cookie: { maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true, secure: false, sameSite: "lax" },
     })
   );
+
+  // Serve uploaded files
+  const express = await import("express");
+  app.use("/uploads", express.default.static(uploadDir));
+
+  // ============================================
+  // FILE UPLOAD
+  // ============================================
+
+  app.post("/api/upload/cover", isAuthenticated, upload.single("cover"), async (req: any, res) => {
+    const profile = await storage.getUserProfile(req.session.userId);
+    if (profile?.role !== "admin") return res.status(403).json({ message: "Accès interdit" });
+    if (!req.file) return res.status(400).json({ message: "Aucun fichier envoyé ou format non supporté" });
+    const url = `/uploads/${req.file.filename}`;
+    res.json({ url });
+  });
 
   // ============================================
   // AUTH ROUTES

@@ -1,10 +1,10 @@
-import { useAdminDashboard, useAdminAmbassadors, useApproveAmbassador, useRejectAmbassador, useProfile, useAdminProducts, useCreateProduct, useDeleteProduct } from "@/hooks/use-paspa";
+import { useAdminDashboard, useAdminAmbassadors, useApproveAmbassador, useRejectAmbassador, useProfile, useAdminProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/use-paspa";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Loader2, Check, X, Shield, Users, ShoppingBag, TrendingUp, DollarSign, Calendar, Plus, Trash2, Globe, FileText, ArrowUpDown } from "lucide-react";
+import { Loader2, Check, X, Shield, Users, ShoppingBag, TrendingUp, DollarSign, Calendar, Plus, Trash2, Globe, FileText, ArrowUpDown, Upload, Pencil, ImageIcon } from "lucide-react";
 import { Redirect } from "wouter";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -13,8 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
+import { useToast } from "@/hooks/use-toast";
 
 const productSchema = z.object({
   name: z.string().min(1, "Nom requis"),
@@ -31,12 +32,26 @@ export default function AdminDashboard() {
   const { mutate: approve, isPending: isApproving } = useApproveAmbassador();
   const { mutate: reject, isPending: isRejecting } = useRejectAmbassador();
   const { mutate: createProduct, isPending: isCreating } = useCreateProduct();
+  const { mutate: updateProduct, isPending: isUpdating } = useUpdateProduct();
   const { mutate: deleteProduct } = useDeleteProduct();
+  const { toast } = useToast();
   const [sortBy, setSortBy] = useState<string>("date");
   const [filterZone, setFilterZone] = useState<string>("all");
   const [productDialogOpen, setProductDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [coverPreview, setCoverPreview] = useState<string>("");
+  const [editCoverPreview, setEditCoverPreview] = useState<string>("");
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof productSchema>>({
+    resolver: zodResolver(productSchema),
+    defaultValues: { name: "", description: "", price: "500", coverImageUrl: "" },
+  });
+
+  const editForm = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
     defaultValues: { name: "", description: "", price: "500", coverImageUrl: "" },
   });
@@ -55,9 +70,80 @@ export default function AdminDashboard() {
       return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     });
 
+  async function uploadCoverImage(file: File): Promise<string | null> {
+    setIsUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("cover", file);
+      const res = await fetch("/api/upload/cover", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        toast({ title: "Erreur", description: err.message || "Erreur lors de l'envoi", variant: "destructive" });
+        return null;
+      }
+      const { url } = await res.json();
+      return url;
+    } catch {
+      toast({ title: "Erreur", description: "Erreur réseau lors de l'envoi du fichier", variant: "destructive" });
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  }
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>, mode: "create" | "edit") {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    if (mode === "create") {
+      setCoverPreview(preview);
+    } else {
+      setEditCoverPreview(preview);
+    }
+    const url = await uploadCoverImage(file);
+    if (url) {
+      if (mode === "create") {
+        form.setValue("coverImageUrl", url);
+      } else {
+        editForm.setValue("coverImageUrl", url);
+      }
+    }
+  }
+
   function onCreateProduct(data: z.infer<typeof productSchema>) {
     createProduct({ ...data, fileUrl: "/pdfs/default.pdf" }, {
-      onSuccess: () => { setProductDialogOpen(false); form.reset(); },
+      onSuccess: () => {
+        setProductDialogOpen(false);
+        form.reset();
+        setCoverPreview("");
+      },
+    });
+  }
+
+  function openEditDialog(product: any) {
+    setEditingProduct(product);
+    editForm.reset({
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      coverImageUrl: product.coverImageUrl || "",
+    });
+    setEditCoverPreview(product.coverImageUrl || "");
+    setEditDialogOpen(true);
+  }
+
+  function onUpdateProduct(data: z.infer<typeof productSchema>) {
+    if (!editingProduct) return;
+    updateProduct({ id: editingProduct.id, data }, {
+      onSuccess: () => {
+        setEditDialogOpen(false);
+        setEditingProduct(null);
+        setEditCoverPreview("");
+      },
     });
   }
 
@@ -251,13 +337,13 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
               <CardTitle className="text-lg">Guides PDF ({adminProducts?.length || 0})</CardTitle>
-              <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
+              <Dialog open={productDialogOpen} onOpenChange={(open) => { setProductDialogOpen(open); if (!open) { setCoverPreview(""); form.reset(); } }}>
                 <DialogTrigger asChild>
                   <Button className="bg-primary" data-testid="button-add-product">
                     <Plus className="w-4 h-4 mr-2" /> Ajouter un Guide
                   </Button>
                 </DialogTrigger>
-                <DialogContent>
+                <DialogContent className="max-w-lg">
                   <DialogHeader>
                     <DialogTitle>Nouveau Guide PDF</DialogTitle>
                   </DialogHeader>
@@ -284,14 +370,41 @@ export default function AdminDashboard() {
                           <FormMessage />
                         </FormItem>
                       )} />
-                      <FormField control={form.control} name="coverImageUrl" render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>URL Image de couverture (optionnel)</FormLabel>
-                          <FormControl><Input placeholder="https://..." {...field} data-testid="input-product-image" /></FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )} />
-                      <Button type="submit" className="w-full bg-primary" disabled={isCreating} data-testid="button-submit-product">
+                      <div className="space-y-2">
+                        <FormLabel>Image de couverture</FormLabel>
+                        <div className="flex flex-col gap-3">
+                          {coverPreview && (
+                            <div className="relative w-full h-40 rounded-md overflow-hidden border">
+                              <img src={coverPreview} alt="Aperçu" className="w-full h-full object-cover" data-testid="img-cover-preview" />
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            ref={fileInputRef}
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            className="hidden"
+                            onChange={(e) => handleFileSelect(e, "create")}
+                            data-testid="input-cover-file"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                            data-testid="button-upload-cover"
+                          >
+                            {isUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                            {isUploading ? "Envoi en cours..." : "Choisir une image"}
+                          </Button>
+                          <FormField control={form.control} name="coverImageUrl" render={({ field }) => (
+                            <FormItem>
+                              <FormControl><Input placeholder="ou collez une URL : https://..." {...field} data-testid="input-product-image" /></FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} />
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full bg-primary" disabled={isCreating || isUploading} data-testid="button-submit-product">
                         {isCreating ? <Loader2 className="animate-spin" /> : "Créer le Guide"}
                       </Button>
                     </form>
@@ -304,6 +417,7 @@ export default function AdminDashboard() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead>Image</TableHead>
                       <TableHead>Nom</TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead>Prix</TableHead>
@@ -314,14 +428,16 @@ export default function AdminDashboard() {
                   <TableBody>
                     {adminProducts?.map((p: any) => (
                       <TableRow key={p.id}>
-                        <TableCell className="font-medium" data-testid={`text-product-${p.id}`}>
-                          <div className="flex items-center gap-3">
-                            {p.coverImageUrl && (
-                              <img src={p.coverImageUrl} alt="" className="w-10 h-10 rounded object-cover" />
-                            )}
-                            {p.name}
-                          </div>
+                        <TableCell>
+                          {p.coverImageUrl ? (
+                            <img src={p.coverImageUrl} alt={p.name} className="w-14 h-14 rounded-md object-cover" data-testid={`img-product-cover-${p.id}`} />
+                          ) : (
+                            <div className="w-14 h-14 rounded-md bg-muted flex items-center justify-center">
+                              <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                            </div>
+                          )}
                         </TableCell>
+                        <TableCell className="font-medium" data-testid={`text-product-${p.id}`}>{p.name}</TableCell>
                         <TableCell className="max-w-xs truncate text-muted-foreground text-sm">{p.description}</TableCell>
                         <TableCell className="font-medium">{p.price} FCFA</TableCell>
                         <TableCell>
@@ -330,9 +446,14 @@ export default function AdminDashboard() {
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button size="sm" variant="outline" onClick={() => deleteProduct(p.id)} data-testid={`button-delete-product-${p.id}`}>
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button size="icon" variant="outline" onClick={() => openEditDialog(p)} data-testid={`button-edit-product-${p.id}`}>
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button size="icon" variant="outline" onClick={() => deleteProduct(p.id)} data-testid={`button-delete-product-${p.id}`}>
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -343,6 +464,76 @@ export default function AdminDashboard() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) { setEditingProduct(null); setEditCoverPreview(""); } }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Modifier le Guide</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onUpdateProduct)} className="space-y-4">
+              <FormField control={editForm.control} name="name" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nom du guide</FormLabel>
+                  <FormControl><Input {...field} data-testid="input-edit-product-name" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={editForm.control} name="description" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description</FormLabel>
+                  <FormControl><Textarea {...field} data-testid="input-edit-product-description" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={editForm.control} name="price" render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Prix (FCFA)</FormLabel>
+                  <FormControl><Input {...field} data-testid="input-edit-product-price" /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <div className="space-y-2">
+                <FormLabel>Image de couverture</FormLabel>
+                <div className="flex flex-col gap-3">
+                  {editCoverPreview && (
+                    <div className="relative w-full h-40 rounded-md overflow-hidden border">
+                      <img src={editCoverPreview} alt="Aperçu" className="w-full h-full object-cover" data-testid="img-edit-cover-preview" />
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={editFileInputRef}
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(e) => handleFileSelect(e, "edit")}
+                    data-testid="input-edit-cover-file"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => editFileInputRef.current?.click()}
+                    disabled={isUploading}
+                    data-testid="button-edit-upload-cover"
+                  >
+                    {isUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                    {isUploading ? "Envoi en cours..." : "Changer l'image"}
+                  </Button>
+                  <FormField control={editForm.control} name="coverImageUrl" render={({ field }) => (
+                    <FormItem>
+                      <FormControl><Input placeholder="ou collez une URL : https://..." {...field} data-testid="input-edit-product-image" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                </div>
+              </div>
+              <Button type="submit" className="w-full bg-primary" disabled={isUpdating || isUploading} data-testid="button-update-product">
+                {isUpdating ? <Loader2 className="animate-spin" /> : "Enregistrer les modifications"}
+              </Button>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

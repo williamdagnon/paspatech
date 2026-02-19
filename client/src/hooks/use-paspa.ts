@@ -146,6 +146,26 @@ export function useCreateProduct() {
   });
 }
 
+export function useUpdateProduct() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<{ name: string; description: string; price: string; coverImageUrl: string }> }) => {
+      const res = await fetch(`/api/admin/products/${id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data), credentials: "include",
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.message); }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/products"] });
+      qc.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({ title: "Produit mis à jour", description: "Les modifications ont été enregistrées." });
+    },
+  });
+}
+
 export function useDeleteProduct() {
   const qc = useQueryClient();
   const { toast } = useToast();
