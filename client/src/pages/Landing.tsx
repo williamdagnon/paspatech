@@ -129,7 +129,7 @@ export default function Landing() {
                   <p className="text-muted-foreground text-sm line-clamp-2 mb-6">
                     {product.description}
                   </p>
-                  <Link href={`/products`}>
+                  <Link href={`/products/${product.id}`}>
                     <Button className="w-full bg-secondary hover:bg-secondary/90 text-white gap-2">
                       <Download className="w-4 h-4" /> Acheter le Guide
                     </Button>
