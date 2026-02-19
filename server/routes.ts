@@ -11,6 +11,12 @@ import pg from "pg";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import {
+  AGGREGATORS, COUNTRY_CODES, paymentInitSchema,
+  initiateFlutterwavePayment, initiatePaystackPayment,
+  verifyFlutterwavePayment, verifyPaystackPayment,
+  FLUTTERWAVE_CONFIG, PAYSTACK_CONFIG,
+} from "./payment";
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
@@ -462,6 +468,124 @@ export async function registerRoutes(
       }
     }
   }, 2000);
+
+  // ============================================
+  // PAYMENT SYSTEM
+  // ============================================
+
+  app.get("/api/payment/aggregators", (_req, res) => {
+    res.json({
+      aggregators: AGGREGATORS,
+      countries: COUNTRY_CODES,
+      demoMode: {
+        flutterwave: FLUTTERWAVE_CONFIG.isDemo,
+        paystack: PAYSTACK_CONFIG.isDemo,
+      },
+    });
+  });
+
+  app.post("/api/payment/initiate", async (req: any, res) => {
+    try {
+      const input = paymentInitSchema.parse(req.body);
+
+      const verifiedItems: { productId: number; quantity: number; serverPrice: number }[] = [];
+      let totalAmount = 0;
+
+      for (const item of input.items) {
+        const product = await storage.getProduct(item.productId);
+        if (!product) {
+          return res.status(404).json({ message: `Produit #${item.productId} introuvable` });
+        }
+        if (!product.isActive) {
+          return res.status(400).json({ message: `Le produit "${product.name}" n'est plus disponible` });
+        }
+        const serverPrice = Number(product.price);
+        verifiedItems.push({ productId: item.productId, quantity: item.quantity, serverPrice });
+        totalAmount += serverPrice * item.quantity;
+      }
+
+      if (totalAmount <= 0) {
+        return res.status(400).json({ message: "Montant invalide" });
+      }
+
+      let zone = "zone1";
+      if (input.ambassadorId) {
+        const ambassadorProfile = await storage.getUserProfile(input.ambassadorId);
+        if (ambassadorProfile?.zone) zone = ambassadorProfile.zone;
+      }
+
+      const salesInZone = await storage.getZoneSales(zone);
+      const totalQty = verifiedItems.reduce((s, i) => s + i.quantity, 0);
+      if (salesInZone + totalQty > 50000) {
+        return res.status(400).json({ message: "Quota de zone dépassé (50 000 PDF maximum)" });
+      }
+
+      let result;
+      if (input.aggregator === "flutterwave") {
+        result = await initiateFlutterwavePayment(input, totalAmount);
+      } else {
+        result = await initiatePaystackPayment(input, totalAmount);
+      }
+
+      for (const item of verifiedItems) {
+        for (let i = 0; i < item.quantity; i++) {
+          const order = await storage.createOrder({
+            userId: req.session?.userId || null,
+            productId: item.productId,
+            amount: item.serverPrice.toString(),
+            paymentMethod: `${input.aggregator}:${input.methodId}`,
+            transactionId: result.transactionId,
+            guestEmail: input.email,
+            guestPhone: input.phoneNumber,
+            ambassadorId: input.ambassadorId,
+            zone,
+            status: result.status === "demo" ? "completed" : "pending",
+          });
+
+          if (input.ambassadorId) {
+            await storage.createCommission({
+              ambassadorId: input.ambassadorId,
+              orderId: order.id,
+              amount: (item.serverPrice * 0.70).toString(),
+              status: "pending",
+            });
+          }
+        }
+      }
+
+      res.json({ ...result, amount: totalAmount });
+    } catch (err: any) {
+      console.error("Payment initiation error:", err);
+      if (err.name === "ZodError") {
+        return res.status(400).json({ message: "Données de paiement invalides", errors: err.errors });
+      }
+      res.status(500).json({ message: err.message || "Erreur lors de l'initialisation du paiement" });
+    }
+  });
+
+  app.post("/api/payment/verify", async (req: any, res) => {
+    try {
+      const { aggregator, transactionId } = z.object({
+        aggregator: z.enum(["flutterwave", "paystack"]),
+        transactionId: z.string(),
+      }).parse(req.body);
+
+      let result;
+      if (aggregator === "flutterwave") {
+        result = await verifyFlutterwavePayment(transactionId);
+      } else {
+        result = await verifyPaystackPayment(transactionId);
+      }
+
+      if (result.verified) {
+        await storage.updateOrderStatus(transactionId, "completed");
+      }
+
+      res.json(result);
+    } catch (err: any) {
+      res.status(500).json({ message: "Erreur de vérification du paiement" });
+    }
+  });
 
   // ============================================
   // SEED DATA

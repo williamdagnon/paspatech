@@ -41,6 +41,8 @@ export interface IStorage {
 
   getReferralsByAmbassador(ambassadorId: string): Promise<Order[]>;
   getReferralCountByAmbassador(ambassadorId: string): Promise<number>;
+  updateOrderStatus(transactionId: string, status: string): Promise<void>;
+  getOrdersByTransactionId(transactionId: string): Promise<Order[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -247,6 +249,17 @@ export class DatabaseStorage implements IStorage {
       .from(orders)
       .where(eq(orders.ambassadorId, ambassadorId));
     return Number(result[0]?.count || 0);
+  }
+
+  async updateOrderStatus(transactionId: string, status: string): Promise<void> {
+    await db.update(orders)
+      .set({ status: status as any })
+      .where(eq(orders.transactionId, transactionId));
+  }
+
+  async getOrdersByTransactionId(transactionId: string): Promise<Order[]> {
+    return await db.select().from(orders)
+      .where(eq(orders.transactionId, transactionId));
   }
 }
 

@@ -1,101 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useCart } from "@/hooks/use-cart";
-import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, ArrowLeft } from "lucide-react";
+import { Minus, Plus, Trash2, ShoppingBag, ArrowRight, ArrowLeft, Shield, CheckCircle2 } from "lucide-react";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
-
-const PAYMENT_METHODS = [
-  { id: "flutterwave", label: "Flutterwave" },
-  { id: "paystack", label: "Paystack" },
-  { id: "orange_money", label: "Orange Money" },
-  { id: "wave", label: "Wave" },
-  { id: "mtn_money", label: "MTN Mobile Money" },
-  { id: "mpesa", label: "M-Pesa" },
-];
 
 export default function Cart() {
-  const { items, removeFromCart, updateQuantity, clearCart, totalItems, totalPrice } = useCart();
+  const { items, removeFromCart, updateQuantity, totalItems, totalPrice } = useCart();
   const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
-
-  async function handleCheckout() {
-    if (!paymentMethod) {
-      toast({ title: "Erreur", description: "Veuillez choisir un mode de paiement", variant: "destructive" });
-      return;
-    }
-
-    setIsProcessing(true);
-
-    try {
-      for (const item of items) {
-        for (let i = 0; i < item.quantity; i++) {
-          const res = await fetch("/api/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              productId: item.product.id,
-              amount: Number(item.product.price),
-              paymentMethod,
-            }),
-            credentials: "include",
-          });
-
-          if (!res.ok) {
-            throw new Error("Échec de la commande");
-          }
-        }
-      }
-
-      clearCart();
-      setOrderSuccess(true);
-      toast({ title: "Commande réussie", description: "Vos guides PDF sont disponibles au téléchargement." });
-    } catch (err: any) {
-      toast({ title: "Erreur", description: err.message, variant: "destructive" });
-    } finally {
-      setIsProcessing(false);
-    }
-  }
-
-  if (orderSuccess) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center p-4">
-        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="max-w-lg w-full text-center">
-          <Card className="p-8 space-y-6">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
-              <ShoppingBag className="w-8 h-8 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold font-display text-primary">Commande Confirmée !</h2>
-            <p className="text-muted-foreground">
-              Merci pour votre achat. Vos guides PDF sont maintenant disponibles.
-              Un email de confirmation vous sera envoyé.
-            </p>
-            <div className="flex flex-col gap-3 pt-4">
-              <Link href="/products">
-                <Button className="w-full bg-primary" data-testid="button-continue-shopping">
-                  Continuer les achats
-                </Button>
-              </Link>
-              <Link href="/">
-                <Button variant="outline" className="w-full" data-testid="button-home">
-                  Retour à l'accueil
-                </Button>
-              </Link>
-            </div>
-          </Card>
-        </motion.div>
-      </div>
-    );
-  }
 
   if (items.length === 0) {
     return (
@@ -203,13 +117,13 @@ export default function Cart() {
             </div>
 
             <div>
-              <Card className="p-6 space-y-6 sticky top-24">
+              <Card className="p-6 space-y-5 sticky top-24">
                 <h3 className="font-bold text-lg">Récapitulatif</h3>
 
                 <div className="space-y-3">
                   {items.map((item) => (
-                    <div key={item.product.id} className="flex justify-between text-sm">
-                      <span className="text-muted-foreground truncate pr-2">{item.product.name} x{item.quantity}</span>
+                    <div key={item.product.id} className="flex justify-between text-sm gap-2">
+                      <span className="text-muted-foreground truncate">{item.product.name} x{item.quantity}</span>
                       <span className="font-medium whitespace-nowrap">{Number(item.product.price) * item.quantity} FCFA</span>
                     </div>
                   ))}
@@ -222,40 +136,31 @@ export default function Cart() {
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Mode de paiement</label>
-                  <Select onValueChange={setPaymentMethod} value={paymentMethod}>
-                    <SelectTrigger data-testid="select-payment-method">
-                      <SelectValue placeholder="Choisir un mode de paiement" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_METHODS.map((pm) => (
-                        <SelectItem key={pm.id} value={pm.id}>{pm.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 {!isAuthenticated && (
                   <div className="bg-muted/50 p-3 rounded-lg text-sm text-muted-foreground">
                     <Link href="/login" className="text-primary underline">Connectez-vous</Link> pour associer vos achats à votre compte.
                   </div>
                 )}
 
-                <Button
-                  className="w-full bg-primary h-12 text-base"
-                  onClick={handleCheckout}
-                  disabled={isProcessing || !paymentMethod}
-                  data-testid="button-checkout"
-                >
-                  {isProcessing ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    <>
-                      Payer {totalPrice} FCFA <ArrowRight className="ml-2 w-4 h-4" />
-                    </>
-                  )}
-                </Button>
+                <Link href="/checkout">
+                  <Button
+                    className="w-full h-12 text-base"
+                    data-testid="button-checkout"
+                  >
+                    Procéder au paiement <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </Link>
+
+                <div className="space-y-2 pt-2">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Shield className="w-3 h-3 text-green-600" />
+                    Paiement 100% sécurisé
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <CheckCircle2 className="w-3 h-3 text-green-600" />
+                    Flutterwave, Paystack, Mobile Money
+                  </div>
+                </div>
               </Card>
             </div>
           </div>
