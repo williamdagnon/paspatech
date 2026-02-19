@@ -15,7 +15,7 @@ import React from "react";
 
 const BANNERS = [
   {
-    image: "https://images.unsplash.com/photo-1592419044706-39796d40f98c?auto=format&fit=crop&q=80&w=1600",
+    image: "https://i.postimg.cc/qM4mVzbj/Chat-GPT-Image-19-fevr-2026-11-40-47.png",
     title: "Révolution Agricole Africaine",
     subtitle: "Le savoir technologique au service de la terre."
   },
@@ -172,7 +172,7 @@ export default function Landing() {
             <div className="relative">
               <div className="absolute -inset-4 bg-orange-500/10 rounded-3xl -rotate-3" />
               <img 
-                src="https://images.unsplash.com/photo-1590001158193-7903d2e5e16e?auto=format&fit=crop&q=80&w=800" 
+                src="https://i.postimg.cc/6pSL33c8/periode_de_plantation_oignon_rouge_9912.webp" 
                 alt="About Paspa Tech"
                 className="relative rounded-2xl shadow-2xl z-10"
               />
