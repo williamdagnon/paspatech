@@ -45,8 +45,9 @@ export function Navigation() {
       <div className="container mx-auto px-4 lg:px-8">
         <div className="flex h-16 items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-xl bg-primary transition-transform group-hover:scale-105">
-              <Sprout className="h-5 w-5 text-white" />
+            <div className="relative flex h-12 w-12 items-center justify-center rounded-xl bg-primary transition-transform group-hover:scale-105">
+              
+              <img src="https://i.postimg.cc/jdCbNxPv/Whats_App_Image_2026_02_17_at_22_45_00.jpg" className="rounded-3xl" />
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-bold font-display tracking-tight text-primary leading-none">PASPA</span>

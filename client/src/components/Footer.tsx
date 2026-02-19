@@ -11,7 +11,7 @@ export function Footer() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-paspa">
-                <Sprout className="h-5 w-5 text-white" />
+                <img src="https://i.postimg.cc/jdCbNxPv/Whats_App_Image_2026_02_17_at_22_45_00.jpg" className="rounded-3xl" />
               </div>
               <span className="text-xl font-bold font-display text-primary">PASPA TECH</span>
             </div>

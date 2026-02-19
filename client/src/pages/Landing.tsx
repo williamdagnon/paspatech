@@ -20,12 +20,12 @@ const BANNERS = [
     subtitle: "Le savoir technologique au service de la terre."
   },
   {
-    image: "https://images.unsplash.com/photo-1530836369250-ef72a3f5cda8?auto=format&fit=crop&q=80&w=1600",
+    image: "https://i.postimg.cc/5tC5FVKq/plants_de_tomates_indetermines.webp",
     title: "Innovation Durable",
     subtitle: "Des techniques modernes pour une production optimisée."
   },
   {
-    image: "https://images.unsplash.com/photo-1495107334309-fcf20504a5ab?auto=format&fit=crop&q=80&w=1600",
+    image: "https://i.postimg.cc/tgxdVjvk/5edf43a40cb6c_maxnewsworld931830_3216771.jpg",
     title: "Expertise Locale",
     subtitle: "Des guides conçus pour les réalités du terrain africain."
   }
