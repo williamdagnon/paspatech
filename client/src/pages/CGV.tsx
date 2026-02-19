@@ -65,7 +65,12 @@ export default function CGV() {
           </section>
 
           <section className="mb-10">
-            <h2 className="text-2xl font-bold mb-4">8. Données personnelles</h2>
+            <h2 className="text-2xl font-bold mb-4">8. Autorisation parentale</h2>
+            <p>Les utilisateurs de moins de 18 ans doivent obtenir l'autorisation de leur parent ou tuteur légal avant tout achat sur la plateforme PASPA TECH. En passant commande, l'utilisateur mineur confirme avoir obtenu cette autorisation préalable.</p>
+          </section>
+
+          <section className="mb-10">
+            <h2 className="text-2xl font-bold mb-4">9. Données personnelles</h2>
             <p>Les données personnelles sont traitées conformément à la Politique de confidentialité RGPD.</p>
             <p className="mt-2">
               Contact : <a href="mailto:paspatech@gmail.com" className="text-primary hover:underline">paspatech@gmail.com</a>
