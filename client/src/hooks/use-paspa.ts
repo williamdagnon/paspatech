@@ -1,167 +1,191 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api, buildUrl, type errorSchemas } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
-import { z } from "zod";
-
-// ============================================
-// PROFILE HOOKS
-// ============================================
 
 export function useProfile() {
   return useQuery({
-    queryKey: [api.profile.get.path],
+    queryKey: ["/api/profile"],
     queryFn: async () => {
-      const res = await fetch(api.profile.get.path, { credentials: "include" });
-      if (res.status === 404) return null;
+      const res = await fetch("/api/profile", { credentials: "include" });
+      if (res.status === 404 || res.status === 401) return null;
       if (!res.ok) throw new Error("Failed to fetch profile");
-      return api.profile.get.responses[200].parse(await res.json());
+      return res.json();
     },
     retry: false,
   });
 }
 
-export function useCreateProfile() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (data: z.infer<typeof api.profile.create.input>) => {
-      const res = await fetch(api.profile.create.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
-      
-      if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || "Failed to create profile");
-      }
-      return api.profile.create.responses[201].parse(await res.json());
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.profile.get.path] });
-      toast({ title: "Welcome!", description: "Your profile has been created successfully." });
-    },
-    onError: (error) => {
-      toast({ 
-        title: "Error", 
-        description: error instanceof Error ? error.message : "Failed to create profile", 
-        variant: "destructive" 
-      });
-    },
-  });
-}
-
-// ============================================
-// PRODUCT HOOKS
-// ============================================
-
 export function useProducts() {
   return useQuery({
-    queryKey: [api.products.list.path],
+    queryKey: ["/api/products"],
     queryFn: async () => {
-      const res = await fetch(api.products.list.path, { credentials: "include" });
+      const res = await fetch("/api/products", { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch products");
-      return api.products.list.responses[200].parse(await res.json());
+      return res.json();
     },
   });
 }
 
-// ============================================
-// ORDER HOOKS
-// ============================================
-
-export function useCreateOrder() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (data: z.infer<typeof api.orders.create.input>) => {
-      const res = await fetch(api.orders.create.path, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        throw new Error("Payment failed or order could not be created");
-      }
-      return api.orders.create.responses[201].parse(await res.json());
+export function useProduct(id: number) {
+  return useQuery({
+    queryKey: ["/api/products", id],
+    queryFn: async () => {
+      const res = await fetch(`/api/products/${id}`, { credentials: "include" });
+      if (!res.ok) throw new Error("Produit introuvable");
+      return res.json();
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.orders.list.path] });
-      // We don't toast here to let the UI handle the specific success modal
-    },
-    onError: (error) => {
-      toast({ 
-        title: "Payment Failed", 
-        description: error instanceof Error ? error.message : "Could not complete transaction", 
-        variant: "destructive" 
-      });
-    },
+    enabled: !!id,
   });
 }
 
-// ============================================
-// ADMIN HOOKS
-// ============================================
+export function useUserOrders() {
+  return useQuery({
+    queryKey: ["/api/user/orders"],
+    queryFn: async () => {
+      const res = await fetch("/api/user/orders", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch orders");
+      return res.json();
+    },
+  });
+}
 
 export function useAdminDashboard() {
   return useQuery({
-    queryKey: [api.admin.dashboard.path],
+    queryKey: ["/api/admin/dashboard"],
     queryFn: async () => {
-      const res = await fetch(api.admin.dashboard.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch dashboard stats");
-      return api.admin.dashboard.responses[200].parse(await res.json());
+      const res = await fetch("/api/admin/dashboard", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch dashboard");
+      return res.json();
     },
   });
 }
 
 export function useAdminAmbassadors() {
   return useQuery({
-    queryKey: [api.admin.ambassadors.path],
+    queryKey: ["/api/admin/ambassadors"],
     queryFn: async () => {
-      const res = await fetch(api.admin.ambassadors.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch ambassadors");
-      return api.admin.ambassadors.responses[200].parse(await res.json());
+      const res = await fetch("/api/admin/ambassadors", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+}
+
+export function useAdminProducts() {
+  return useQuery({
+    queryKey: ["/api/admin/products"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/products", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+  });
+}
+
+export function useAdminOrders() {
+  return useQuery({
+    queryKey: ["/api/admin/orders"],
+    queryFn: async () => {
+      const res = await fetch("/api/admin/orders", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
     },
   });
 }
 
 export function useApproveAmbassador() {
-  const queryClient = useQueryClient();
+  const qc = useQueryClient();
   const { toast } = useToast();
-
   return useMutation({
     mutationFn: async (id: number) => {
-      const url = buildUrl(api.admin.approveAmbassador.path, { id });
-      const res = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Failed to approve");
-      return api.admin.approveAmbassador.responses[200].parse(await res.json());
+      const res = await fetch(`/api/admin/ambassadors/${id}/approve`, { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [api.admin.ambassadors.path] });
-      toast({ title: "Approved", description: "Ambassador has been approved." });
+      qc.invalidateQueries({ queryKey: ["/api/admin/ambassadors"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
+      toast({ title: "Approuvé", description: "L'ambassadeur a été approuvé." });
     },
   });
 }
 
-// ============================================
-// AMBASSADOR HOOKS
-// ============================================
+export function useRejectAmbassador() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/ambassadors/${id}/reject`, { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/ambassadors"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
+      toast({ title: "Rejeté", description: "L'ambassadeur a été rejeté." });
+    },
+  });
+}
+
+export function useCreateProduct() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (data: { name: string; description: string; price: string; fileUrl?: string; coverImageUrl?: string }) => {
+      const res = await fetch("/api/admin/products", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data), credentials: "include",
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.message); }
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/products"] });
+      qc.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({ title: "Produit créé", description: "Le guide PDF a été ajouté." });
+    },
+  });
+}
+
+export function useDeleteProduct() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/products/${id}`, { method: "DELETE", credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/products"] });
+      qc.invalidateQueries({ queryKey: ["/api/products"] });
+      toast({ title: "Supprimé", description: "Le produit a été désactivé." });
+    },
+  });
+}
+
+export function usePayCommission() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+  return useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/admin/commissions/${id}/pay`, { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/dashboard"] });
+      toast({ title: "Commission payée", description: "La commission a été marquée comme payée." });
+    },
+  });
+}
 
 export function useAmbassadorStats() {
   return useQuery({
-    queryKey: [api.ambassador.stats.path],
+    queryKey: ["/api/ambassador/stats"],
     queryFn: async () => {
-      const res = await fetch(api.ambassador.stats.path, { credentials: "include" });
-      if (!res.ok) throw new Error("Failed to fetch stats");
-      return api.ambassador.stats.responses[200].parse(await res.json());
+      const res = await fetch("/api/ambassador/stats", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed");
+      return res.json();
     },
   });
 }

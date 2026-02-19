@@ -84,7 +84,7 @@ export function Navigation() {
             <div className="hidden md:flex items-center gap-2">
               {user ? (
                 <>
-                  <Link href={isAmbassador ? "/ambassador/dashboard" : isAdmin ? "/admin" : "/products"}>
+                  <Link href={isAmbassador ? "/ambassador/dashboard" : isAdmin ? "/admin" : "/dashboard"}>
                     <Button variant="ghost" size="icon" data-testid="button-user-profile">
                       <User className="h-5 w-5" />
                     </Button>

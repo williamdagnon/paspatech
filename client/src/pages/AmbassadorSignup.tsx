@@ -40,6 +40,9 @@ const signupSchema = z.object({
   acceptNoResale: z.boolean().refine(val => val === true, {
     message: "Vous devez accepter la clause de non-revente"
   }),
+  acceptContract: z.boolean().refine(val => val === true, {
+    message: "Vous devez lire et accepter le contrat d'ambassadeur"
+  }),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Les mots de passe ne correspondent pas",
   path: ["confirmPassword"],
@@ -65,8 +68,11 @@ export default function AmbassadorSignup() {
       zone: "zone1",
       acceptTerms: false,
       acceptNoResale: false,
+      acceptContract: false,
     },
   });
+
+  const [contractRead, setContractRead] = useState(false);
 
   const selectedZone = form.watch("zone");
   const countries = selectedZone === "zone1" ? ZONE1_COUNTRIES : ZONE2_COUNTRIES;
@@ -83,6 +89,7 @@ export default function AmbassadorSignup() {
         zone: data.zone,
         acceptedTerms: data.acceptTerms,
         acceptedNoResale: data.acceptNoResale,
+        acceptedContract: data.acceptContract,
       });
       setSuccess(true);
     } catch (err: any) {
@@ -277,7 +284,87 @@ export default function AmbassadorSignup() {
                 )} />
 
                 <div className="border-t pt-6 space-y-4">
-                  <h3 className="font-bold text-lg">Engagements contractuels</h3>
+                  <h3 className="font-bold text-lg">Contrat d'Ambassadeur PASPA TECH</h3>
+                  <p className="text-sm text-muted-foreground">Veuillez lire attentivement le contrat ci-dessous avant de soumettre votre candidature.</p>
+                  <div
+                    className="border rounded-lg p-6 bg-muted/30 max-h-[400px] overflow-y-auto text-sm leading-relaxed space-y-4"
+                    onScroll={(e) => {
+                      const el = e.currentTarget;
+                      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 20) {
+                        setContractRead(true);
+                      }
+                    }}
+                    data-testid="contract-text"
+                  >
+                    <h4 className="font-bold text-base text-center">CONTRAT D'AMBASSADEUR PASPA TECH</h4>
+                    <p className="text-center text-muted-foreground">Accord de Partenariat Commercial</p>
+
+                    <div className="space-y-3">
+                      <h5 className="font-bold">Article 1 : Objet du Contrat</h5>
+                      <p>Le présent contrat définit les conditions de collaboration entre PASPA TECH (ci-après « la Plateforme ») et l'Ambassadeur inscrit (ci-après « l'Ambassadeur »). L'Ambassadeur s'engage à promouvoir et vendre les guides PDF agricoles de la Plateforme dans sa zone géographique assignée, en échange d'une commission sur chaque vente réalisée.</p>
+
+                      <h5 className="font-bold">Article 2 : Commission et Rémunération</h5>
+                      <p>L'Ambassadeur percevra une commission de <strong>70% (350 FCFA)</strong> sur chaque guide PDF vendu au prix unitaire de 500 FCFA via son lien de parrainage. La Plateforme conserve 30% (150 FCFA) pour la maintenance, le développement et les frais opérationnels. Les commissions sont versées automatiquement via Mobile Money après confirmation du paiement par l'acheteur.</p>
+
+                      <h5 className="font-bold">Article 3 : Zones Géographiques</h5>
+                      <p><strong>Zone 1 (Afrique Subsaharienne) :</strong> Sénégal, Mali, Burkina Faso, Côte d'Ivoire, Guinée, Niger, Togo, Bénin, Cameroun, Congo, RDC, Gabon, Tchad, Ghana, Nigeria, Kenya, Tanzanie, Ouganda, Rwanda, Mozambique, Madagascar.</p>
+                      <p><strong>Zone 2 (Afrique du Nord) :</strong> Maroc, Tunisie, Algérie, Égypte, Libye, Mauritanie.</p>
+                      <p>Chaque zone dispose d'un quota maximal de <strong>50 000 guides</strong>. Les ventes et fonds de chaque zone sont strictement isolés.</p>
+
+                      <h5 className="font-bold">Article 4 : Obligations de l'Ambassadeur</h5>
+                      <p>L'Ambassadeur s'engage à :</p>
+                      <ul className="list-disc ml-6 space-y-1">
+                        <li>Promouvoir les guides PDF de manière éthique et professionnelle</li>
+                        <li>Ne jamais revendre, reproduire, modifier ou redistribuer les contenus PDF</li>
+                        <li>Respecter la politique de confidentialité et le RGPD</li>
+                        <li>Fournir des informations exactes lors de l'inscription</li>
+                        <li>Ne pas utiliser de méthodes frauduleuses pour générer des ventes</li>
+                        <li>Informer immédiatement PASPA TECH de toute tentative de fraude détectée</li>
+                      </ul>
+
+                      <h5 className="font-bold">Article 5 : Propriété Intellectuelle</h5>
+                      <p>Tous les guides PDF, marques, logos et contenus de la Plateforme sont la <strong>propriété exclusive de PASPA TECH</strong>. L'Ambassadeur n'acquiert aucun droit de propriété intellectuelle sur ces contenus. Toute reproduction non autorisée constitue une violation du droit d'auteur et entraînera la résiliation immédiate du contrat et des poursuites judiciaires.</p>
+
+                      <h5 className="font-bold">Article 6 : Approbation et Résiliation</h5>
+                      <p>L'inscription de l'Ambassadeur est soumise à l'approbation de l'administration PASPA TECH. La Plateforme se réserve le droit de refuser, suspendre ou révoquer le statut d'Ambassadeur à tout moment en cas de non-respect des obligations contractuelles, de fraude avérée ou suspectée, ou de comportement nuisant à la réputation de la Plateforme.</p>
+
+                      <h5 className="font-bold">Article 7 : Protection des Données (RGPD)</h5>
+                      <p>Conformément au Règlement Général sur la Protection des Données, l'Ambassadeur consent à la collecte et au traitement de ses données personnelles nécessaires au fonctionnement du partenariat. Les données sont stockées de manière sécurisée et ne seront jamais vendues à des tiers.</p>
+
+                      <h5 className="font-bold">Article 8 : Clause Anti-Fraude</h5>
+                      <p>Toute tentative de manipulation du système de parrainage (auto-achats, faux comptes, liens trompeurs, spam) sera détectée et sanctionnée par la suspension immédiate du compte, le gel des commissions non versées, et d'éventuelles poursuites judiciaires.</p>
+
+                      <p className="text-center text-muted-foreground mt-6">
+                        En acceptant ce contrat, vous reconnaissez avoir lu, compris et accepté l'ensemble des conditions ci-dessus.
+                      </p>
+                    </div>
+                  </div>
+
+                  {!contractRead && (
+                    <p className="text-sm text-orange-500 font-medium">
+                      Veuillez faire défiler le contrat jusqu'en bas pour pouvoir l'accepter.
+                    </p>
+                  )}
+
+                  <FormField control={form.control} name="acceptContract" render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 bg-primary/5">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={!contractRead}
+                          data-testid="checkbox-contract"
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className={!contractRead ? "text-muted-foreground" : ""}>
+                          J'ai lu et j'accepte le Contrat d'Ambassadeur PASPA TECH dans son intégralité.
+                        </FormLabel>
+                        <FormMessage />
+                      </div>
+                    </FormItem>
+                  )} />
+
                   <FormField control={form.control} name="acceptTerms" render={({ field }) => (
                     <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                       <FormControl>

@@ -31,7 +31,7 @@ export default function Products() {
       </div>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {products?.map((product, index) => (
+        {products?.map((product: Product, index: number) => (
           <motion.div
             key={product.id}
             initial={{ opacity: 0, y: 20 }}
@@ -92,13 +92,22 @@ function ProductCard({ product }: { product: Product }) {
         </p>
 
         <div className="flex gap-3">
+          <Link href={`/products/${product.id}`} className="flex-1">
+            <Button
+              variant="outline"
+              className="w-full"
+              data-testid={`button-view-product-${product.id}`}
+            >
+              Voir détails
+            </Button>
+          </Link>
           <Button
             className="flex-1 bg-primary"
             onClick={handleAddToCart}
             data-testid={`button-add-to-cart-${product.id}`}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Ajouter au panier
+            Ajouter
           </Button>
         </div>
       </div>

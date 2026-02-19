@@ -92,7 +92,7 @@ export function useAuth() {
     mutationFn: async (data: {
       email: string; password: string; firstName: string; lastName: string;
       phoneNumber: string; country: string; zone: string;
-      acceptedTerms: boolean; acceptedNoResale: boolean;
+      acceptedTerms: boolean; acceptedNoResale: boolean; acceptedContract: boolean;
     }) => {
       const res = await fetch("/api/auth/register-ambassador", {
         method: "POST",

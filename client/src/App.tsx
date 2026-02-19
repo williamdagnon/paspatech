@@ -22,6 +22,8 @@ import PrivacyPolicy from "@/pages/PrivacyPolicy";
 import Login from "@/pages/Login";
 import Register from "@/pages/Register";
 import Cart from "@/pages/Cart";
+import UserDashboard from "@/pages/UserDashboard";
+import ProductDetail from "@/pages/ProductDetail";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -32,6 +34,8 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/register" component={Register} />
       <Route path="/cart" component={Cart} />
+      <Route path="/dashboard" component={UserDashboard} />
+      <Route path="/products/:id" component={ProductDetail} />
       <Route path="/ambassador/signup" component={AmbassadorSignup} />
       <Route path="/ambassador/dashboard" component={AmbassadorDashboard} />
       <Route path="/admin" component={AdminDashboard} />
