@@ -445,6 +445,25 @@ export async function registerRoutes(
   });
 
   // ============================================
+  // AUTO-PROMOTE ADMIN ACCOUNTS
+  // ============================================
+
+  const ADMIN_EMAILS = ["williamarthurdagnon@gmail.com", "paspatech@gmail.com"];
+
+  setTimeout(async () => {
+    for (const adminEmail of ADMIN_EMAILS) {
+      const user = await storage.getUserByEmail(adminEmail);
+      if (user) {
+        const profile = await storage.getUserProfile(user.id);
+        if (profile && profile.role !== "admin") {
+          await storage.updateUserProfile(user.id, { role: "admin" });
+          console.log(`Promoted ${adminEmail} to admin`);
+        }
+      }
+    }
+  }, 2000);
+
+  // ============================================
   // SEED DATA
   // ============================================
 
