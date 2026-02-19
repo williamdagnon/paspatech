@@ -116,7 +116,7 @@ export default function Landing() {
               >
                 <div className="aspect-[4/3] overflow-hidden">
                   <img 
-                    src={product.coverImageUrl || "https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?auto=format&fit=crop&q=80&w=800"} 
+                    src={product.coverImageUrl || "https://i.postimg.cc/MKKzZ0dh/prod_oignon.png"} 
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
