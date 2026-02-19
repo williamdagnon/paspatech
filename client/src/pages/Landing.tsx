@@ -108,7 +108,7 @@ export default function Landing() {
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
-            {featuredProducts?.map((product) => (
+            {featuredProducts?.map((product: any) => (
               <motion.div
                 key={product.id}
                 whileHover={{ y: -10 }}
