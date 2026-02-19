@@ -52,10 +52,10 @@ function ProductCard({ product }: { product: Product }) {
 
   const getProductImage = (name: string) => {
     const lower = name.toLowerCase();
-    if (lower.includes("oignon")) return "https://images.unsplash.com/photo-1618512496248-a07fe83aa829?auto=format&fit=crop&q=80&w=600";
-    if (lower.includes("tomate")) return "https://images.unsplash.com/photo-1592924357228-91a4daadcfea?auto=format&fit=crop&q=80&w=600";
-    if (lower.includes("piment")) return "https://images.unsplash.com/photo-1583119022894-919a68a3d0e3?auto=format&fit=crop&q=80&w=600";
-    if (lower.includes("manioc")) return "https://images.unsplash.com/photo-1598511757337-fe2cafc31ba0?auto=format&fit=crop&q=80&w=600";
+    if (lower.includes("oignon")) return "https://i.postimg.cc/MKKzZ0dh/prod_oignon.png";
+    if (lower.includes("tomate")) return "https://i.postimg.cc/g06zFYNL/prod_tomate.png";
+    if (lower.includes("piment")) return "https://i.postimg.cc/zfRzZJ0K/prod_piment_rouge.png";
+    if (lower.includes("manioc")) return "https://i.postimg.cc/pXXPVQsN/prod_manioc.png";
     if (lower.includes("gingembre")) return "https://images.unsplash.com/photo-1615485500704-8e990f9900f7?auto=format&fit=crop&q=80&w=600";
     return "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&q=80&w=600";
   };
