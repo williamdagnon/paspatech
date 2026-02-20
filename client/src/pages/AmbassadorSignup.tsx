@@ -8,21 +8,25 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation, Link } from "wouter";
-import { Loader2, ArrowRight, Users, Globe, Wallet, ShieldCheck, Check, Eye, EyeOff } from "lucide-react";
+import { Loader2, ArrowRight, Users, Globe, Wallet, ShieldCheck, Check, Eye, EyeOff, AlertTriangle } from "lucide-react";
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 
-const ZONE1_COUNTRIES = [
-  "Sénégal", "Mali", "Burkina Faso", "Côte d'Ivoire", "Guinée",
-  "Niger", "Togo", "Bénin", "Cameroun", "Congo", "RDC",
-  "Gabon", "Tchad", "Ghana", "Nigeria", "Kenya", "Tanzanie",
-  "Ouganda", "Rwanda", "Mozambique", "Madagascar"
-];
-
-const ZONE2_COUNTRIES = [
-  "Maroc", "Tunisie", "Algérie", "Égypte", "Libye", "Mauritanie"
+const AFRICAN_COUNTRIES = [
+  "Afrique du Sud", "Algérie", "Angola", "Bénin", "Botswana",
+  "Burkina Faso", "Burundi", "Cameroun", "Cap-Vert", "Centrafrique",
+  "Comores", "Congo", "Côte d'Ivoire", "Djibouti", "Égypte",
+  "Érythrée", "Eswatini", "Éthiopie", "Gabon", "Gambie",
+  "Ghana", "Guinée", "Guinée-Bissau", "Guinée Équatoriale",
+  "Kenya", "Lesotho", "Liberia", "Libye", "Madagascar",
+  "Malawi", "Mali", "Maroc", "Maurice", "Mauritanie",
+  "Mozambique", "Namibie", "Niger", "Nigeria", "Ouganda",
+  "RDC", "Rwanda", "São Tomé-et-Príncipe", "Sénégal",
+  "Seychelles", "Sierra Leone", "Somalie", "Soudan", "Soudan du Sud",
+  "Tanzanie", "Tchad", "Togo", "Tunisie", "Zambie", "Zimbabwe"
 ];
 
 const signupSchema = z.object({
@@ -33,7 +37,6 @@ const signupSchema = z.object({
   confirmPassword: z.string(),
   phoneNumber: z.string().min(8, "Le numéro de téléphone doit contenir au moins 8 chiffres"),
   country: z.string().min(1, "Veuillez sélectionner votre pays"),
-  zone: z.enum(["zone1", "zone2"]),
   acceptTerms: z.boolean().refine(val => val === true, {
     message: "Vous devez accepter les conditions"
   }),
@@ -49,11 +52,21 @@ const signupSchema = z.object({
 });
 
 export default function AmbassadorSignup() {
-  const { registerAmbassador, isRegisteringAmbassador, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { registerAmbassador, isRegisteringAmbassador, isAuthenticated, user, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [success, setSuccess] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+
+  const { data: eligibility, isLoading: eligLoading } = useQuery({
+    queryKey: ["/api/user/ambassador-eligibility"],
+    queryFn: async () => {
+      const res = await fetch("/api/user/ambassador-eligibility", { credentials: "include" });
+      if (res.status === 401) return { eligible: false, reason: "not_logged_in" };
+      if (!res.ok) return { eligible: false, reason: "error" };
+      return res.json();
+    },
+  });
 
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
@@ -65,7 +78,6 @@ export default function AmbassadorSignup() {
       confirmPassword: "",
       phoneNumber: "",
       country: "",
-      zone: "zone1",
       acceptTerms: false,
       acceptNoResale: false,
       acceptContract: false,
@@ -73,9 +85,6 @@ export default function AmbassadorSignup() {
   });
 
   const [contractRead, setContractRead] = useState(false);
-
-  const selectedZone = form.watch("zone");
-  const countries = selectedZone === "zone1" ? ZONE1_COUNTRIES : ZONE2_COUNTRIES;
 
   async function onSubmit(data: z.infer<typeof signupSchema>) {
     try {
@@ -86,7 +95,7 @@ export default function AmbassadorSignup() {
         lastName: data.lastName,
         phoneNumber: data.phoneNumber,
         country: data.country,
-        zone: data.zone,
+        zone: "zone1",
         acceptedTerms: data.acceptTerms,
         acceptedNoResale: data.acceptNoResale,
         acceptedContract: data.acceptContract,
@@ -97,22 +106,79 @@ export default function AmbassadorSignup() {
     }
   }
 
-  if (authLoading) return null;
+  if (authLoading || eligLoading) return null;
 
-  if (isAuthenticated && !success) {
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md">
+          <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-8 h-8 text-orange-500" />
+          </div>
+          <h1 className="text-3xl font-bold font-display mb-4">Connexion requise</h1>
+          <p className="text-muted-foreground mb-8">
+            Vous devez être connecté et avoir acheté au moins un guide pour candidater comme ambassadeur.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link href="/login">
+              <Button className="w-full bg-primary" data-testid="button-go-login">
+                Se connecter
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button variant="outline" className="w-full" data-testid="button-go-register">
+                Créer un compte
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (eligibility && !eligibility.eligible && eligibility.reason === "no_purchases") {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 text-center">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md">
+          <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-8 h-8 text-orange-500" />
+          </div>
+          <h1 className="text-3xl font-bold font-display mb-4">Achat requis</h1>
+          <p className="text-muted-foreground mb-8">
+            Pour devenir ambassadeur PASPA TECH, vous devez d'abord acheter au moins un guide PDF.
+            Cela vous permet de connaître nos produits avant de les recommander.
+          </p>
+          <div className="flex flex-col gap-3">
+            <Link href="/products">
+              <Button className="w-full bg-primary" data-testid="button-go-products">
+                Voir les Guides PDF
+              </Button>
+            </Link>
+            <Link href="/dashboard">
+              <Button variant="outline" className="w-full" data-testid="button-go-dashboard">
+                Mon Tableau de Bord
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (eligibility && !eligibility.eligible && eligibility.reason === "already_ambassador") {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center p-4 text-center">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-md">
           <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
             <Check className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-bold font-display mb-4">Vous êtes déjà connecté</h1>
+          <h1 className="text-3xl font-bold font-display mb-4">Vous êtes déjà ambassadeur</h1>
           <p className="text-muted-foreground mb-8">
-            Vous avez déjà un compte. Accédez à votre tableau de bord ou retournez à l'accueil.
+            Votre compte ambassadeur est déjà actif. Accédez à votre tableau de bord.
           </p>
           <div className="flex flex-col gap-3">
             <Button className="bg-primary" onClick={() => setLocation("/ambassador/dashboard")} data-testid="button-go-dashboard">
-              Tableau de Bord
+              Tableau de Bord Ambassadeur
             </Button>
             <Button variant="outline" onClick={() => setLocation("/")} data-testid="button-go-home">
               Accueil
@@ -131,14 +197,14 @@ export default function AmbassadorSignup() {
             <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto">
               <Check className="w-8 h-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold font-display text-primary">Inscription Réussie !</h2>
+            <h2 className="text-2xl font-bold font-display text-primary">Candidature Envoyée !</h2>
             <p className="text-muted-foreground">
-              Votre compte ambassadeur a été créé avec succès.
-              Notre équipe va examiner votre candidature et vous serez notifié une fois approuvé.
+              Votre candidature ambassadeur a été soumise avec succès.
+              Notre équipe va examiner votre profil et vous serez notifié une fois approuvé.
             </p>
             <div className="flex flex-col gap-3 pt-4">
-              <Button className="w-full bg-primary" onClick={() => setLocation("/ambassador/dashboard")} data-testid="button-go-dashboard">
-                Accéder à mon Tableau de Bord
+              <Button className="w-full bg-primary" onClick={() => setLocation("/dashboard")} data-testid="button-go-dashboard">
+                Mon Tableau de Bord
               </Button>
               <Button variant="outline" className="w-full" onClick={() => setLocation("/")} data-testid="button-go-home">
                 Retour à l'accueil
@@ -175,7 +241,7 @@ export default function AmbassadorSignup() {
                 <Globe className="w-6 h-6 text-secondary" />
               </div>
               <h3 className="font-bold mb-2">Couverture Africaine</h3>
-              <p className="text-sm text-muted-foreground">2 zones couvrant tout le continent africain.</p>
+              <p className="text-sm text-muted-foreground">Promouvez les guides dans tout le continent africain.</p>
             </Card>
             <Card className="p-6 text-center">
               <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
@@ -187,7 +253,7 @@ export default function AmbassadorSignup() {
           </div>
 
           <Card className="p-8 md:p-12">
-            <h2 className="text-2xl font-bold font-display text-center mb-8">Formulaire d'Inscription Ambassadeur</h2>
+            <h2 className="text-2xl font-bold font-display text-center mb-8">Formulaire de Candidature Ambassadeur</h2>
 
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -249,25 +315,6 @@ export default function AmbassadorSignup() {
                   </FormItem>
                 )} />
 
-                <FormField control={form.control} name="zone" render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Votre Zone Géographique</FormLabel>
-                    <Select onValueChange={(val) => { field.onChange(val); form.setValue("country", ""); }} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-zone"><SelectValue placeholder="Sélectionnez votre zone" /></SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="zone1">Zone 1 - Afrique Subsaharienne</SelectItem>
-                        <SelectItem value="zone2">Zone 2 - Afrique du Nord et autres</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      {selectedZone === "zone1" ? "Sénégal, Mali, Côte d'Ivoire, Cameroun, etc." : "Maroc, Tunisie, Algérie, Égypte, etc."}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
                 <FormField control={form.control} name="country" render={({ field }) => (
                   <FormItem>
                     <FormLabel>Pays de résidence</FormLabel>
@@ -276,7 +323,7 @@ export default function AmbassadorSignup() {
                         <SelectTrigger data-testid="select-country"><SelectValue placeholder="Sélectionnez votre pays" /></SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {countries.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                        {AFRICAN_COUNTRIES.map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -301,17 +348,12 @@ export default function AmbassadorSignup() {
 
                     <div className="space-y-3">
                       <h5 className="font-bold">Article 1 : Objet du Contrat</h5>
-                      <p>Le présent contrat définit les conditions de collaboration entre PASPA TECH (ci-après « la Plateforme ») et l'Ambassadeur inscrit (ci-après « l'Ambassadeur »). L'Ambassadeur s'engage à promouvoir et vendre les guides PDF agricoles de la Plateforme dans sa zone géographique assignée, en échange d'une commission sur chaque vente réalisée.</p>
+                      <p>Le présent contrat définit les conditions de collaboration entre PASPA TECH (ci-après « la Plateforme ») et l'Ambassadeur inscrit (ci-après « l'Ambassadeur »). L'Ambassadeur s'engage à promouvoir et vendre les guides PDF agricoles de la Plateforme, en échange d'une commission sur chaque vente réalisée.</p>
 
                       <h5 className="font-bold">Article 2 : Commission et Rémunération</h5>
                       <p>L'Ambassadeur percevra une commission de <strong>70% (350 FCFA)</strong> sur chaque guide PDF vendu au prix unitaire de 500 FCFA via son lien de parrainage. La Plateforme conserve 30% (150 FCFA) pour la maintenance, le développement et les frais opérationnels. Les commissions sont versées automatiquement via Mobile Money après confirmation du paiement par l'acheteur.</p>
 
-                      <h5 className="font-bold">Article 3 : Zones Géographiques</h5>
-                      <p><strong>Zone 1 (Afrique Subsaharienne) :</strong> Sénégal, Mali, Burkina Faso, Côte d'Ivoire, Guinée, Niger, Togo, Bénin, Cameroun, Congo, RDC, Gabon, Tchad, Ghana, Nigeria, Kenya, Tanzanie, Ouganda, Rwanda, Mozambique, Madagascar.</p>
-                      <p><strong>Zone 2 (Afrique du Nord) :</strong> Maroc, Tunisie, Algérie, Égypte, Libye, Mauritanie.</p>
-                      <p>Chaque zone dispose d'un quota maximal de <strong>50 000 guides</strong>. Les ventes et fonds de chaque zone sont strictement isolés.</p>
-
-                      <h5 className="font-bold">Article 4 : Obligations de l'Ambassadeur</h5>
+                      <h5 className="font-bold">Article 3 : Obligations de l'Ambassadeur</h5>
                       <p>L'Ambassadeur s'engage à :</p>
                       <ul className="list-disc ml-6 space-y-1">
                         <li>Promouvoir les guides PDF de manière éthique et professionnelle</li>
@@ -322,16 +364,16 @@ export default function AmbassadorSignup() {
                         <li>Informer immédiatement PASPA TECH de toute tentative de fraude détectée</li>
                       </ul>
 
-                      <h5 className="font-bold">Article 5 : Propriété Intellectuelle</h5>
+                      <h5 className="font-bold">Article 4 : Propriété Intellectuelle</h5>
                       <p>Tous les guides PDF, marques, logos et contenus de la Plateforme sont la <strong>propriété exclusive de PASPA TECH</strong>. L'Ambassadeur n'acquiert aucun droit de propriété intellectuelle sur ces contenus. Toute reproduction non autorisée constitue une violation du droit d'auteur et entraînera la résiliation immédiate du contrat et des poursuites judiciaires.</p>
 
-                      <h5 className="font-bold">Article 6 : Approbation et Résiliation</h5>
+                      <h5 className="font-bold">Article 5 : Approbation et Résiliation</h5>
                       <p>L'inscription de l'Ambassadeur est soumise à l'approbation de l'administration PASPA TECH. La Plateforme se réserve le droit de refuser, suspendre ou révoquer le statut d'Ambassadeur à tout moment en cas de non-respect des obligations contractuelles, de fraude avérée ou suspectée, ou de comportement nuisant à la réputation de la Plateforme.</p>
 
-                      <h5 className="font-bold">Article 7 : Protection des Données (RGPD)</h5>
+                      <h5 className="font-bold">Article 6 : Protection des Données (RGPD)</h5>
                       <p>Conformément au Règlement Général sur la Protection des Données, l'Ambassadeur consent à la collecte et au traitement de ses données personnelles nécessaires au fonctionnement du partenariat. Les données sont stockées de manière sécurisée et ne seront jamais vendues à des tiers.</p>
 
-                      <h5 className="font-bold">Article 8 : Clause Anti-Fraude</h5>
+                      <h5 className="font-bold">Article 7 : Clause Anti-Fraude</h5>
                       <p>Toute tentative de manipulation du système de parrainage (auto-achats, faux comptes, liens trompeurs, spam) sera détectée et sanctionnée par la suspension immédiate du compte, le gel des commissions non versées, et d'éventuelles poursuites judiciaires.</p>
 
                       <p className="text-center text-muted-foreground mt-6">
@@ -395,13 +437,9 @@ export default function AmbassadorSignup() {
 
                 <Button type="submit" className="w-full bg-primary h-14 text-lg" disabled={isRegisteringAmbassador} data-testid="button-submit-ambassador">
                   {isRegisteringAmbassador ? <Loader2 className="animate-spin" /> : (
-                    <>Valider mon inscription <ArrowRight className="ml-2 w-5 h-5" /></>
+                    <>Valider ma candidature <ArrowRight className="ml-2 w-5 h-5" /></>
                   )}
                 </Button>
-
-                <p className="text-xs text-center text-muted-foreground">
-                  Déjà inscrit ? <Link href="/login" className="text-primary underline">Connectez-vous</Link>
-                </p>
               </form>
             </Form>
           </Card>

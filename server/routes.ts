@@ -20,6 +20,8 @@ import {
 
 const uploadDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+const pdfDir = path.join(process.cwd(), "uploads/pdfs");
+if (!fs.existsSync(pdfDir)) fs.mkdirSync(pdfDir, { recursive: true });
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -34,6 +36,20 @@ const upload = multer({
     const allowed = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
     const ext = path.extname(file.originalname).toLowerCase();
     cb(null, allowed.includes(ext));
+  },
+});
+
+const uploadPdf = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, pdfDir),
+    filename: (_req, file, cb) => {
+      cb(null, `guide_${Date.now()}.pdf`);
+    },
+  }),
+  limits: { fileSize: 50 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    cb(null, ext === ".pdf");
   },
 });
 import { eq } from "drizzle-orm";
@@ -82,7 +98,12 @@ export async function registerRoutes(
 
   // Serve uploaded files
   const express = await import("express");
-  app.use("/uploads", express.default.static(uploadDir));
+  app.use("/uploads", (req: any, res: any, next: any) => {
+    if (req.path.startsWith("/pdfs/")) {
+      return res.status(403).json({ message: "Accès interdit. Utilisez le lien de téléchargement après achat." });
+    }
+    next();
+  }, express.default.static(uploadDir));
 
   // ============================================
   // FILE UPLOAD
@@ -93,6 +114,14 @@ export async function registerRoutes(
     if (profile?.role !== "admin") return res.status(403).json({ message: "Accès interdit" });
     if (!req.file) return res.status(400).json({ message: "Aucun fichier envoyé ou format non supporté" });
     const url = `/uploads/${req.file.filename}`;
+    res.json({ url });
+  });
+
+  app.post("/api/upload/pdf", isAuthenticated, uploadPdf.single("pdf"), async (req: any, res) => {
+    const profile = await storage.getUserProfile(req.session.userId);
+    if (profile?.role !== "admin") return res.status(403).json({ message: "Accès interdit" });
+    if (!req.file) return res.status(400).json({ message: "Aucun fichier PDF envoyé ou format non supporté. Seuls les fichiers .pdf sont acceptés." });
+    const url = `/uploads/pdfs/${req.file.filename}`;
     res.json({ url });
   });
 
@@ -134,12 +163,18 @@ export async function registerRoutes(
     }
   });
 
+  const NORTH_AFRICA_COUNTRIES = ["Maroc", "Tunisie", "Algérie", "Égypte", "Libye", "Mauritanie"];
+
+  function getZoneFromCountry(country: string): "zone1" | "zone2" {
+    return NORTH_AFRICA_COUNTRIES.includes(country) ? "zone2" : "zone1";
+  }
+
   app.post("/api/auth/register-ambassador", async (req: any, res) => {
     try {
       const ambassadorSchema = registerSchema.extend({
         phoneNumber: z.string().min(8, "Numéro de téléphone invalide"),
         country: z.string().min(1, "Pays requis"),
-        zone: z.enum(["zone1", "zone2"]),
+        zone: z.string().optional(),
         acceptedTerms: z.boolean().refine(v => v, "Vous devez accepter les conditions"),
         acceptedNoResale: z.boolean().refine(v => v, "Vous devez accepter la clause"),
         acceptedContract: z.boolean().refine(v => v, "Vous devez accepter le contrat"),
@@ -147,11 +182,12 @@ export async function registerRoutes(
       const input = ambassadorSchema.parse(req.body);
       const existing = await storage.getUserByEmail(input.email);
       if (existing) return res.status(400).json({ message: "Un compte avec cet email existe déjà" });
+      const zone = getZoneFromCountry(input.country);
       const passwordHash = await bcrypt.hash(input.password, 12);
       const user = await storage.createUser({ email: input.email, firstName: input.firstName, lastName: input.lastName, passwordHash });
       await storage.createUserProfile({
         userId: user.id, firstName: input.firstName, lastName: input.lastName,
-        role: "ambassador", zone: input.zone, phoneNumber: input.phoneNumber,
+        role: "ambassador", zone, phoneNumber: input.phoneNumber,
         country: input.country, isApproved: false,
         acceptedTerms: input.acceptedTerms, acceptedNoResale: input.acceptedNoResale,
       });
@@ -207,6 +243,52 @@ export async function registerRoutes(
   app.get("/api/user/orders", isAuthenticated, async (req: any, res) => {
     const userOrders = await storage.getOrdersByUser(req.session.userId);
     res.json(userOrders);
+  });
+
+  app.get("/api/user/ambassador-eligibility", async (req: any, res) => {
+    if (!req.session?.userId) {
+      return res.status(401).json({ eligible: false, reason: "not_logged_in" });
+    }
+    const profile = await storage.getUserProfile(req.session.userId);
+    if (profile?.role === "ambassador") {
+      return res.json({ eligible: false, reason: "already_ambassador" });
+    }
+    if (profile?.role === "admin") {
+      return res.json({ eligible: false, reason: "is_admin" });
+    }
+    const orders = await storage.getOrdersByUser(req.session.userId);
+    const completedOrders = orders.filter((o: any) => o.status === "completed");
+    if (completedOrders.length === 0) {
+      return res.json({ eligible: false, reason: "no_purchases" });
+    }
+    return res.json({ eligible: true });
+  });
+
+  app.get("/api/user/downloads/:orderId", isAuthenticated, async (req: any, res) => {
+    try {
+      const orderId = Number(req.params.orderId);
+      const orders = await storage.getOrdersByUser(req.session.userId);
+      const order = orders.find((o: any) => o.id === orderId && o.status === "completed");
+      if (!order) {
+        return res.status(403).json({ message: "Accès refusé. Commande introuvable ou non complétée." });
+      }
+      const product = await storage.getProduct(order.productId);
+      if (!product || !product.fileUrl) {
+        return res.status(404).json({ message: "Fichier PDF introuvable pour ce produit." });
+      }
+      const filePath = path.join(process.cwd(), product.fileUrl.startsWith("/") ? product.fileUrl.slice(1) : product.fileUrl);
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({ message: "Le fichier PDF n'est pas encore disponible." });
+      }
+      const filename = `${product.name.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüç\s-]/g, "").replace(/\s+/g, "_")}.pdf`;
+      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("Content-Type", "application/pdf");
+      const fileStream = fs.createReadStream(filePath);
+      fileStream.pipe(res);
+    } catch (err) {
+      console.error("Download error:", err);
+      res.status(500).json({ message: "Erreur lors du téléchargement" });
+    }
   });
 
   // ============================================
@@ -366,7 +448,7 @@ export async function registerRoutes(
         name: z.string().min(1, "Nom requis"),
         description: z.string().min(1, "Description requise"),
         price: z.string(),
-        fileUrl: z.string().default("/pdfs/default.pdf"),
+        fileUrl: z.string().min(1, "Le fichier PDF est obligatoire"),
         coverImageUrl: z.string().optional(),
       }).parse(req.body);
       const product = await storage.createProduct(input);

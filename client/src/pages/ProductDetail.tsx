@@ -3,9 +3,8 @@ import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Loader2, Plus, ArrowLeft, ShoppingCart, ShieldCheck, Download, FileText } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Link, useParams } from "wouter";
+import { Loader2, ArrowLeft, ShoppingBag, ShieldCheck, Download, FileText } from "lucide-react";
+import { Link, useParams, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import type { Product } from "@shared/schema";
 
@@ -14,7 +13,7 @@ export default function ProductDetail() {
   const id = Number(params.id);
   const { data: product, isLoading, error } = useProduct(id);
   const { addToCart } = useCart();
-  const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   if (isLoading) {
     return (
@@ -49,9 +48,9 @@ export default function ProductDetail() {
     return "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&q=80&w=1200";
   };
 
-  function handleAddToCart() {
+  function handleBuyGuide() {
     addToCart(product);
-    toast({ title: "Ajouté au panier", description: `${product.name} a été ajouté à votre panier.` });
+    setLocation("/checkout");
   }
 
   const imageUrl = product.coverImageUrl || getProductImage(product.name);
@@ -144,19 +143,12 @@ export default function ProductDetail() {
             <div className="mt-auto space-y-3">
               <Button
                 className="w-full bg-primary h-14 text-lg"
-                onClick={handleAddToCart}
-                data-testid="button-add-to-cart"
+                onClick={handleBuyGuide}
+                data-testid="button-buy-guide"
               >
-                <Plus className="w-5 h-5 mr-2" />
-                Ajouter au panier - {product.price} FCFA
+                <ShoppingBag className="w-5 h-5 mr-2" />
+                Acheter le Guide - {product.price} FCFA
               </Button>
-
-              <Link href="/cart">
-                <Button variant="outline" className="w-full h-12" data-testid="button-go-to-cart">
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Voir mon panier
-                </Button>
-              </Link>
             </div>
 
             <div className="mt-6 p-4 bg-muted/30 rounded-lg border border-border/50">

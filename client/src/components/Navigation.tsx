@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
 
 export function Navigation() {
   const { user, logout } = useAuth();
@@ -28,8 +29,20 @@ export function Navigation() {
   const [location] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
 
+  const { data: eligibility } = useQuery({
+    queryKey: ["/api/user/ambassador-eligibility"],
+    queryFn: async () => {
+      const res = await fetch("/api/user/ambassador-eligibility", { credentials: "include" });
+      if (res.status === 401) return { eligible: false, reason: "not_logged_in" };
+      if (!res.ok) return { eligible: false, reason: "error" };
+      return res.json();
+    },
+    enabled: !!user,
+  });
+
   const isAdmin = profile?.role === "admin";
   const isAmbassador = profile?.role === "ambassador";
+  const showAmbassadorLink = user && !isAmbassador && !isAdmin && eligibility?.eligible;
 
   const navLinks = [
     { href: "/products", label: "Guides PDF", icon: ShoppingBag },
@@ -37,7 +50,7 @@ export function Navigation() {
     { href: "/contact", label: "Contact", icon: Mail },
     ...(isAmbassador ? [{ href: "/ambassador/dashboard", label: "Dashboard", icon: LayoutDashboard }] : []),
     ...(isAdmin ? [{ href: "/admin", label: "Admin", icon: ShieldCheck }] : []),
-    ...(!user ? [{ href: "/ambassador/signup", label: "Devenir Ambassadeur", icon: UserPlus }] : []),
+    ...(showAmbassadorLink ? [{ href: "/ambassador/signup", label: "Devenir Ambassadeur", icon: UserPlus }] : []),
   ];
 
   return (

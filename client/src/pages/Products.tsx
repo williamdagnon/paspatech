@@ -3,11 +3,10 @@ import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ShoppingCart, Plus } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Loader2, ShoppingBag } from "lucide-react";
 import type { Product } from "@shared/schema";
 import { motion } from "framer-motion";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 
 export default function Products() {
   const { data: products, isLoading } = useProducts();
@@ -26,7 +25,7 @@ export default function Products() {
         <h1 className="text-4xl font-display font-bold mb-4">Nos Guides Techniques</h1>
         <p className="text-muted-foreground text-lg">
           Des manuels experts pour maîtriser vos cultures africaines.
-          Ajoutez-les à votre panier et téléchargez-les après paiement sécurisé.
+          Achetez et téléchargez-les après paiement sécurisé.
         </p>
       </div>
 
@@ -48,7 +47,7 @@ export default function Products() {
 
 function ProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
-  const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const getProductImage = (name: string) => {
     const lower = name.toLowerCase();
@@ -60,12 +59,9 @@ function ProductCard({ product }: { product: Product }) {
     return "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&q=80&w=600";
   };
 
-  function handleAddToCart() {
+  function handleBuyGuide() {
     addToCart(product);
-    toast({
-      title: "Ajouté au panier",
-      description: `${product.name} a été ajouté à votre panier.`,
-    });
+    setLocation("/checkout");
   }
 
   return (
@@ -103,11 +99,11 @@ function ProductCard({ product }: { product: Product }) {
           </Link>
           <Button
             className="flex-1 bg-primary"
-            onClick={handleAddToCart}
-            data-testid={`button-add-to-cart-${product.id}`}
+            onClick={handleBuyGuide}
+            data-testid={`button-buy-guide-${product.id}`}
           >
-            <Plus className="w-4 h-4 mr-2" />
-            Ajouter
+            <ShoppingBag className="w-4 h-4 mr-2" />
+            Acheter
           </Button>
         </div>
       </div>

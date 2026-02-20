@@ -22,6 +22,7 @@ const productSchema = z.object({
   description: z.string().min(10, "Description requise (min 10 caractères)"),
   price: z.string().min(1, "Prix requis"),
   coverImageUrl: z.string().optional(),
+  fileUrl: z.string().min(1, "Le fichier PDF du guide est obligatoire"),
 });
 
 export default function AdminDashboard() {
@@ -48,13 +49,19 @@ export default function AdminDashboard() {
 
   const form = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", price: "500", coverImageUrl: "" },
+    defaultValues: { name: "", description: "", price: "500", coverImageUrl: "", fileUrl: "" },
   });
 
   const editForm = useForm<z.infer<typeof productSchema>>({
     resolver: zodResolver(productSchema),
-    defaultValues: { name: "", description: "", price: "500", coverImageUrl: "" },
+    defaultValues: { name: "", description: "", price: "500", coverImageUrl: "", fileUrl: "" },
   });
+
+  const [pdfFileName, setPdfFileName] = useState("");
+  const [editPdfFileName, setEditPdfFileName] = useState("");
+  const [isUploadingPdf, setIsUploadingPdf] = useState(false);
+  const pdfInputRef = useRef<HTMLInputElement>(null);
+  const editPdfInputRef = useRef<HTMLInputElement>(null);
 
   if (profileLoading || statsLoading) {
     return <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary" /></div>;
@@ -114,12 +121,46 @@ export default function AdminDashboard() {
     }
   }
 
+  async function handlePdfSelect(e: React.ChangeEvent<HTMLInputElement>, mode: "create" | "edit") {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPdf(true);
+    try {
+      const formData = new FormData();
+      formData.append("pdf", file);
+      const res = await fetch("/api/upload/pdf", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        toast({ title: "Erreur", description: err.message || "Erreur lors de l'envoi du PDF", variant: "destructive" });
+        return;
+      }
+      const { url } = await res.json();
+      if (mode === "create") {
+        form.setValue("fileUrl", url);
+        setPdfFileName(file.name);
+      } else {
+        editForm.setValue("fileUrl", url);
+        setEditPdfFileName(file.name);
+      }
+      toast({ title: "PDF envoyé", description: `${file.name} a été uploadé avec succès.` });
+    } catch {
+      toast({ title: "Erreur", description: "Erreur réseau lors de l'envoi du PDF", variant: "destructive" });
+    } finally {
+      setIsUploadingPdf(false);
+    }
+  }
+
   function onCreateProduct(data: z.infer<typeof productSchema>) {
-    createProduct({ ...data, fileUrl: "/pdfs/default.pdf" }, {
+    createProduct({ ...data, fileUrl: data.fileUrl }, {
       onSuccess: () => {
         setProductDialogOpen(false);
         form.reset();
         setCoverPreview("");
+        setPdfFileName("");
       },
     });
   }
@@ -131,8 +172,10 @@ export default function AdminDashboard() {
       description: product.description,
       price: product.price,
       coverImageUrl: product.coverImageUrl || "",
+      fileUrl: product.fileUrl || "",
     });
     setEditCoverPreview(product.coverImageUrl || "");
+    setEditPdfFileName(product.fileUrl ? product.fileUrl.split("/").pop() || "PDF existant" : "");
     setEditDialogOpen(true);
   }
 
@@ -143,6 +186,7 @@ export default function AdminDashboard() {
         setEditDialogOpen(false);
         setEditingProduct(null);
         setEditCoverPreview("");
+        setEditPdfFileName("");
       },
     });
   }
@@ -337,7 +381,7 @@ export default function AdminDashboard() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
               <CardTitle className="text-lg">Guides PDF ({adminProducts?.length || 0})</CardTitle>
-              <Dialog open={productDialogOpen} onOpenChange={(open) => { setProductDialogOpen(open); if (!open) { setCoverPreview(""); form.reset(); } }}>
+              <Dialog open={productDialogOpen} onOpenChange={(open) => { setProductDialogOpen(open); if (!open) { setCoverPreview(""); setPdfFileName(""); form.reset(); } }}>
                 <DialogTrigger asChild>
                   <Button className="bg-primary" data-testid="button-add-product">
                     <Plus className="w-4 h-4 mr-2" /> Ajouter un Guide
@@ -404,7 +448,37 @@ export default function AdminDashboard() {
                           )} />
                         </div>
                       </div>
-                      <Button type="submit" className="w-full bg-primary" disabled={isCreating || isUploading} data-testid="button-submit-product">
+                      <div className="space-y-2">
+                        <FormLabel className="text-destructive">Fichier PDF du guide (obligatoire) *</FormLabel>
+                        <div className="flex flex-col gap-3">
+                          {pdfFileName && (
+                            <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-md border border-green-200 dark:border-green-800">
+                              <FileText className="w-4 h-4 text-green-600" />
+                              <span className="text-sm font-medium text-green-700 dark:text-green-400 truncate">{pdfFileName}</span>
+                            </div>
+                          )}
+                          <input
+                            type="file"
+                            ref={pdfInputRef}
+                            accept="application/pdf"
+                            className="hidden"
+                            onChange={(e) => handlePdfSelect(e, "create")}
+                            data-testid="input-pdf-file"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => pdfInputRef.current?.click()}
+                            disabled={isUploadingPdf}
+                            data-testid="button-upload-pdf"
+                          >
+                            {isUploadingPdf ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                            {isUploadingPdf ? "Envoi du PDF..." : "Choisir le fichier PDF"}
+                          </Button>
+                          <p className="text-xs text-muted-foreground">Le fichier PDF est le contenu du guide. Il sera disponible au téléchargement après achat.</p>
+                        </div>
+                      </div>
+                      <Button type="submit" className="w-full bg-primary" disabled={isCreating || isUploading || isUploadingPdf} data-testid="button-submit-product">
                         {isCreating ? <Loader2 className="animate-spin" /> : "Créer le Guide"}
                       </Button>
                     </form>
@@ -421,6 +495,7 @@ export default function AdminDashboard() {
                       <TableHead>Nom</TableHead>
                       <TableHead>Description</TableHead>
                       <TableHead>Prix</TableHead>
+                      <TableHead>PDF</TableHead>
                       <TableHead>Actif</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
@@ -440,6 +515,17 @@ export default function AdminDashboard() {
                         <TableCell className="font-medium" data-testid={`text-product-${p.id}`}>{p.name}</TableCell>
                         <TableCell className="max-w-xs truncate text-muted-foreground text-sm">{p.description}</TableCell>
                         <TableCell className="font-medium">{p.price} FCFA</TableCell>
+                        <TableCell>
+                          {p.fileUrl ? (
+                            <Badge className="bg-green-100 text-green-700 border-green-200">
+                              <FileText className="w-3 h-3 mr-1" /> Oui
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-700 border-red-200">
+                              <X className="w-3 h-3 mr-1" /> Non
+                            </Badge>
+                          )}
+                        </TableCell>
                         <TableCell>
                           <Badge className={p.isActive ? "bg-green-100 text-green-700 border-green-200" : "bg-red-100 text-red-700 border-red-200"}>
                             {p.isActive ? "Actif" : "Inactif"}
@@ -465,7 +551,7 @@ export default function AdminDashboard() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) { setEditingProduct(null); setEditCoverPreview(""); } }}>
+      <Dialog open={editDialogOpen} onOpenChange={(open) => { setEditDialogOpen(open); if (!open) { setEditingProduct(null); setEditCoverPreview(""); setEditPdfFileName(""); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Modifier le Guide</DialogTitle>
@@ -527,7 +613,36 @@ export default function AdminDashboard() {
                   )} />
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-primary" disabled={isUpdating || isUploading} data-testid="button-update-product">
+              <div className="space-y-2">
+                <FormLabel>Fichier PDF du guide</FormLabel>
+                <div className="flex flex-col gap-3">
+                  {editPdfFileName && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-md border border-green-200 dark:border-green-800">
+                      <FileText className="w-4 h-4 text-green-600" />
+                      <span className="text-sm font-medium text-green-700 dark:text-green-400 truncate">{editPdfFileName}</span>
+                    </div>
+                  )}
+                  <input
+                    type="file"
+                    ref={editPdfInputRef}
+                    accept="application/pdf"
+                    className="hidden"
+                    onChange={(e) => handlePdfSelect(e, "edit")}
+                    data-testid="input-edit-pdf-file"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => editPdfInputRef.current?.click()}
+                    disabled={isUploadingPdf}
+                    data-testid="button-edit-upload-pdf"
+                  >
+                    {isUploadingPdf ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                    {isUploadingPdf ? "Envoi du PDF..." : "Changer le fichier PDF"}
+                  </Button>
+                </div>
+              </div>
+              <Button type="submit" className="w-full bg-primary" disabled={isUpdating || isUploading || isUploadingPdf} data-testid="button-update-product">
                 {isUpdating ? <Loader2 className="animate-spin" /> : "Enregistrer les modifications"}
               </Button>
             </form>
