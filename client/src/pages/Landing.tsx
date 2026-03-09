@@ -20,7 +20,7 @@ const BANNERS = [
     subtitle: "Le savoir technologique au service de la terre."
   },
   {
-    image: "https://i.postimg.cc/5tC5FVKq/plants_de_tomates_indetermines.webp",
+    image: "https://i.postimg.cc/9XgZpBLk/ouv-piment-Adobe-Stock-755060343.jpg",
     title: "Innovation Durable",
     subtitle: "Des techniques modernes pour une production optimisée."
   },
@@ -154,11 +154,11 @@ export default function Landing() {
               <div className="text-white/80">Ambassadeurs</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">15+</div>
+              <div className="text-4xl font-bold mb-2">154</div>
               <div className="text-white/80">Pays Africains</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">98%</div>
+              <div className="text-4xl font-bold mb-2">100%</div>
               <div className="text-white/80">Satisfaction</div>
             </div>
           </div>
