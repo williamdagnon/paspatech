@@ -68,6 +68,8 @@ const loginSchema = z.object({
   password: z.string().min(1, "Mot de passe requis"),
 });
 
+const ADMIN_EMAILS = ["williamarthurdagnon@gmail.com", "paspatech@gmail.com"];
+
 function isAuthenticated(req: any, res: any, next: any) {
   if (req.session && req.session.userId) {
     return next();
@@ -138,7 +140,8 @@ export async function registerRoutes(
       if (existing) return res.status(400).json({ message: "Un compte avec cet email existe déjà" });
       const passwordHash = await bcrypt.hash(input.password, 12);
       const user = await storage.createUser({ email: input.email, firstName: input.firstName, lastName: input.lastName, passwordHash });
-      await storage.createUserProfile({ userId: user.id, firstName: input.firstName, lastName: input.lastName, role: "customer" });
+      const role = ADMIN_EMAILS.includes(input.email.toLowerCase()) ? "admin" : "customer";
+      await storage.createUserProfile({ userId: user.id, firstName: input.firstName, lastName: input.lastName, role });
       req.session.userId = user.id;
       const { passwordHash: _, ...safeUser } = user;
       res.status(201).json(safeUser);
@@ -156,6 +159,19 @@ export async function registerRoutes(
       if (!user || !user.passwordHash) return res.status(401).json({ message: "Email ou mot de passe incorrect" });
       const valid = await bcrypt.compare(input.password, user.passwordHash);
       if (!valid) return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+
+      if (ADMIN_EMAILS.includes(input.email.toLowerCase())) {
+        const profile = await storage.getUserProfile(user.id);
+        if (!profile || profile.role !== "admin") {
+          if (profile) {
+            await storage.updateUserProfile(user.id, { role: "admin" });
+          } else {
+            await storage.createUserProfile({ userId: user.id, firstName: user.firstName || "", lastName: user.lastName || "", role: "admin" });
+          }
+          console.info(`Auto-promoted login ${input.email} to admin`);
+        }
+      }
+
       req.session.userId = user.id;
       const { passwordHash: _, ...safeUser } = user;
       res.json(safeUser);
