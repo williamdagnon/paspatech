@@ -24,11 +24,11 @@ const BANNERS = [
   //   title: "Innovation Durable",
   //   subtitle: "Des techniques modernes pour une production optimisée."
   // },
-  {
-    image: "https://i.postimg.cc/tgxdVjvk/5edf43a40cb6c_maxnewsworld931830_3216771.jpg",
-    title: "Expertise Locale",
-    subtitle: "Des guides conçus pour les réalités du terrain africain."
-  }
+  // {
+  //   image: "https://i.postimg.cc/tgxdVjvk/5edf43a40cb6c_maxnewsworld931830_3216771.jpg",
+  //   title: "Expertise Locale",
+  //   subtitle: "Des guides conçus pour les réalités du terrain africain."
+  // }
 ];
 
 export default function Landing() {
