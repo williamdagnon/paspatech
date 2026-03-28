@@ -71,7 +71,7 @@ export default function ProductDetail() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="relative rounded-2xl overflow-hidden bg-muted aspect-[4/3]">
+            <div className="relative rounded-2xl overflow-hidden bg-muted aspect-square">
               <img
                 src={imageUrl}
                 alt={product.name}

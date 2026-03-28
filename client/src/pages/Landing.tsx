@@ -53,7 +53,7 @@ export default function Landing() {
                 <img 
                   src={banner.image} 
                   alt={banner.title}
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full md:object-cover object-contain"
                 />
                 <div className="relative z-20 container mx-auto px-4 h-full flex flex-col justify-center items-start">
                   <motion.div
@@ -114,7 +114,7 @@ export default function Landing() {
                 whileHover={{ y: -10 }}
                 className="group relative bg-card rounded-2xl overflow-hidden border border-border shadow-lg"
               >
-                <div className="aspect-[4/3] overflow-hidden">
+                <div className="aspect-square overflow-hidden">
                   <img 
                     src={product.coverImageUrl || "https://i.postimg.cc/MKKzZ0dh/prod_oignon.png"} 
                     alt={product.name}

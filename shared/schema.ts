@@ -51,6 +51,8 @@ export const orders = pgTable("orders", {
   transactionId: text("transaction_id"),
   ambassadorId: text("ambassador_id").references(() => users.id), // Who referred this sale
   zone: text("zone"), // zone1 or zone2
+  pdfDownloaded: boolean("pdf_downloaded").default(false), // Track if PDF was downloaded
+  downloadToken: text("download_token"), // Unique token for secure download
   createdAt: timestamp("created_at").defaultNow(),
 });
 

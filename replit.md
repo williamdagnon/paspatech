@@ -70,7 +70,7 @@ Preferred communication style: Simple, everyday language.
 - **Two Ambassador Zones**: Zone 1 (Sub-Saharan Africa), Zone 2 (Other African countries like Morocco, Tunisia). Zones are isolated — ambassadors only see their own zone, funds never mix between zones.
 - **Quota System**: 50,000 PDF downloads max per zone (aggregated across all ambassadors in that zone)
 - **Commission Model**: 70% to ambassador, 30% to PASPA TECH, at 500 FCFA per PDF
-- **Payment**: Simulated on frontend (Flutterwave/Paystack/Mobile Money integration planned but keys not provided)
+- **Payment**: Integrated with FedaPay for secure mobile money and card payments across West Africa
 - **PDF Protection**: PDFs include no-resale notices, are PASPA TECH exclusive property, and download only after payment confirmation
 - **Admin Controls**: Owner can approve/reject ambassadors, view per-zone analytics, manually select next ambassador
 
@@ -80,11 +80,10 @@ Preferred communication style: Simple, everyday language.
 - **PostgreSQL Database**: Required. Connected via `DATABASE_URL` environment variable. Used for all data storage including auth sessions.
 - **Replit Auth (OIDC)**: Authentication provider. Requires `ISSUER_URL`, `REPL_ID`, and `SESSION_SECRET` environment variables.
 
-### Payment Integrations (Planned)
-- **Flutterwave**: African payment aggregator for collecting payments across the continent
-- **Paystack**: Alternative payment processor
-- **Mobile Money**: Direct mobile money integration (Orange Money, Wave, etc.)
-- Currently simulated with mock delays on the frontend
+### Payment Integrations
+- **FedaPay**: Primary payment aggregator supporting mobile money (Orange Money, Wave, Moov, Free Cash) and card payments across Senegal, Côte d'Ivoire, Mali, and Burkina Faso
+- Requires `FEDAPAY_PUBLIC_KEY` and `FEDAPAY_SECRET_KEY` environment variables
+- Sandbox mode available for testing without real transactions
 
 ### Frontend Assets
 - **Unsplash**: Hero images sourced from Unsplash with agricultural/tech keywords

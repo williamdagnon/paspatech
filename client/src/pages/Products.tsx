@@ -66,7 +66,7 @@ function ProductCard({ product }: { product: Product }) {
 
   return (
     <Card className="overflow-hidden flex flex-col h-full">
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative aspect-square overflow-hidden">
         <img
           src={product.coverImageUrl || getProductImage(product.name)}
           alt={product.name}

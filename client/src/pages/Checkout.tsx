@@ -69,6 +69,18 @@ export default function Checkout() {
     },
   });
 
+  // Query pour récupérer les méthodes de paiement disponibles pour le pays sélectionné
+  const { data: countryMethods, refetch: refetchMethods } = useQuery({
+    queryKey: ["/api/payment/methods", selectedCountry],
+    queryFn: async () => {
+      if (!selectedCountry) return null;
+      const res = await fetch(`/api/payment/methods/${selectedCountry}`);
+      if (!res.ok) throw new Error("Failed to load payment methods");
+      return res.json();
+    },
+    enabled: !!selectedCountry,
+  });
+
   useEffect(() => {
     if (user) {
       if (user.email) setEmail(user.email);
@@ -76,17 +88,27 @@ export default function Checkout() {
     }
   }, [user]);
 
+  // Réinitialiser la méthode sélectionnée quand le pays change
+  useEffect(() => {
+    if (selectedCountry && selectedMethod) {
+      const isMethodAvailable = countryMethods?.methods?.some((m: any) => m.id === selectedMethod);
+      if (!isMethodAvailable) {
+        setSelectedMethod("");
+      }
+    }
+  }, [selectedCountry, countryMethods, selectedMethod]);
+
   const aggregators: Record<string, Aggregator> = paymentConfig?.aggregators || {};
   const countries: Record<string, CountryInfo> = paymentConfig?.countries || {};
   const demoMode = paymentConfig?.demoMode || {};
 
   const currentAggregator = aggregators[selectedAggregator];
-  const currentMethod = currentAggregator?.methods.find((m: PaymentMethod) => m.id === selectedMethod);
+  const currentMethod = countryMethods?.methods?.find((m: any) => m.id === selectedMethod);
   const currentCountry = countries[selectedCountry];
 
-  const availableCountries = currentMethod
-    ? currentMethod.countries.map((c: string) => countries[c]).filter(Boolean)
-    : [];
+  // Utiliser les méthodes dynamiques du pays sélectionné
+  const availableMethods = countryMethods?.methods || [];
+  const availableCountries = Object.values(countries);
 
   if (items.length === 0 && step !== "result") {
     return (
@@ -243,7 +265,16 @@ export default function Checkout() {
                         >
                           <div className="flex items-start gap-4">
                             <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              <CreditCard className="w-8 h-8 text-primary" />
+                              <img
+                                src={agg.logo}
+                                alt={`${agg.name} logo`}
+                                className="w-full h-full object-contain"
+                                onError={(e) => {
+                                  // Fallback to icon if image fails to load
+                                  e.currentTarget.style.display = 'none';
+                                  e.currentTarget.parentElement!.innerHTML = '<svg class="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>';
+                                }}
+                              />
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-3 flex-wrap">
@@ -292,50 +323,90 @@ export default function Checkout() {
                 {step === "method" && currentAggregator && (
                   <motion.div key="method" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                     <h2 className="text-xl font-bold mb-2">
-                      {currentAggregator.name} - Choisir le mode de paiement
+                      {currentAggregator.name} - Choisir votre pays et mode de paiement
                     </h2>
                     <p className="text-muted-foreground mb-6">
-                      Sélectionnez votre opérateur mobile money.
+                      Sélectionnez d'abord votre pays, puis votre opérateur mobile money.
                     </p>
-                    <div className="grid gap-3">
-                      {currentAggregator.methods.map((method: PaymentMethod) => (
-                        <Card
-                          key={method.id}
-                          className={`p-4 cursor-pointer transition-all hover-elevate ${
-                            selectedMethod === method.id ? "ring-2 ring-primary" : ""
-                          }`}
-                          onClick={() => {
-                            setSelectedMethod(method.id);
-                            setSelectedCountry("");
+
+                    {/* Sélection du pays */}
+                    <Card className="p-6 mb-6">
+                      <div className="space-y-3">
+                        <Label htmlFor="country-select">Pays de résidence</Label>
+                        <Select
+                          value={selectedCountry}
+                          onValueChange={(value) => {
+                            setSelectedCountry(value);
+                            setSelectedMethod(""); // Reset method when country changes
                           }}
-                          data-testid={`card-method-${method.id}`}
                         >
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                              <Smartphone className="w-6 h-6 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-sm">{method.name}</h3>
-                              <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-1">
-                                <Globe className="w-3 h-3" />
-                                {method.countriesLabel}
-                              </p>
-                            </div>
-                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                              selectedMethod === method.id ? "border-primary bg-primary" : "border-muted-foreground"
-                            }`}>
-                              {selectedMethod === method.id && (
-                                <CheckCircle2 className="w-3 h-3 text-primary-foreground" />
-                              )}
-                            </div>
+                          <SelectTrigger data-testid="select-country-method" className="mt-1.5">
+                            <SelectValue placeholder="Sélectionnez votre pays" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableCountries.map((c: CountryInfo) => (
+                              <SelectItem key={c.code} value={c.code}>
+                                <span className="flex items-center gap-2">
+                                  <span>{(c as any).flag || '🏳️'}</span>
+                                  {c.name} ({c.phonePrefix})
+                                </span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </Card>
+
+                    {/* Méthodes de paiement disponibles pour le pays sélectionné */}
+                    {selectedCountry && (
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Modes de paiement disponibles</h3>
+                        {countryMethods ? (
+                          <div className="grid gap-3">
+                            {availableMethods.map((method: any) => (
+                              <Card
+                                key={method.id}
+                                className={`p-4 cursor-pointer transition-all hover-elevate ${
+                                  selectedMethod === method.id ? "ring-2 ring-primary" : ""
+                                }`}
+                                onClick={() => setSelectedMethod(method.id)}
+                                data-testid={`card-method-${method.id}`}
+                              >
+                                <div className="flex items-center gap-4">
+                                  <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                                    <Smartphone className="w-6 h-6 text-primary" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <h3 className="font-bold text-sm">{method.name}</h3>
+                                    <p className="text-muted-foreground text-xs mt-0.5 flex items-center gap-1">
+                                      <Globe className="w-3 h-3" />
+                                      {method.countries.map((code: string) => (countries[code] as any)?.flag || '🏳️').join(' ')} {method.countries.length === 1 ? countries[method.countries[0]]?.name : `${method.countries.length} pays`}
+                                    </p>
+                                  </div>
+                                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                    selectedMethod === method.id ? "border-primary bg-primary" : "border-muted-foreground"
+                                  }`}>
+                                    {selectedMethod === method.id && (
+                                      <CheckCircle2 className="w-3 h-3 text-primary-foreground" />
+                                    )}
+                                  </div>
+                                </div>
+                              </Card>
+                            ))}
                           </div>
-                        </Card>
-                      ))}
-                    </div>
+                        ) : (
+                          <div className="flex items-center justify-center py-8">
+                            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                            <span className="ml-2 text-muted-foreground">Chargement des méthodes...</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     <div className="mt-6 flex justify-end">
                       <Button
                         onClick={() => setStep("details")}
-                        disabled={!selectedMethod}
+                        disabled={!selectedMethod || !selectedCountry}
                         data-testid="button-next-details"
                       >
                         Continuer <ArrowRight className="w-4 h-4 ml-2" />
@@ -364,7 +435,10 @@ export default function Checkout() {
                             <SelectContent>
                               {availableCountries.map((c: CountryInfo) => (
                                 <SelectItem key={c.code} value={c.code}>
-                                  {c.name} ({c.phonePrefix})
+                                  <span className="flex items-center gap-2">
+                                    <span>{(c as any).flag || '🏳️'}</span>
+                                    {c.name} ({c.phonePrefix})
+                                  </span>
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -576,7 +650,7 @@ export default function Checkout() {
                           </div>
                           <div className="flex justify-between">
                             <span className="text-muted-foreground">Agrégateur</span>
-                            <span className="font-medium">{paymentResult.aggregator === "flutterwave" ? "Flutterwave" : "Paystack"}</span>
+                            <span className="font-medium">{paymentResult.aggregator === "fedapay" ? "FedaPay" : paymentResult.aggregator}</span>
                           </div>
                         </div>
                       </Card>

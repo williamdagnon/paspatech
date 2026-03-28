@@ -13,9 +13,11 @@ import path from "path";
 import fs from "fs";
 import {
   AGGREGATORS, COUNTRY_CODES, paymentInitSchema,
-  initiateFlutterwavePayment, initiatePaystackPayment,
-  verifyFlutterwavePayment, verifyPaystackPayment,
-  FLUTTERWAVE_CONFIG, PAYSTACK_CONFIG,
+  initiateFedapayPayment,
+  verifyFedapayPayment,
+  FEDAPAY_CONFIG,
+  getAvailableMethodsForCountry,
+  CountryCode,
 } from "./payment";
 
 const uploadDir = path.join(process.cwd(), "uploads");
@@ -269,20 +271,42 @@ export async function registerRoutes(
       const orderId = Number(req.params.orderId);
       const orders = await storage.getOrdersByUser(req.session.userId);
       const order = orders.find((o: any) => o.id === orderId && o.status === "completed");
+
       if (!order) {
         return res.status(403).json({ message: "Accès refusé. Commande introuvable ou non complétée." });
       }
+
+      // Vérifier si le PDF a déjà été téléchargé
+      if (order.pdfDownloaded) {
+        return res.status(403).json({ message: "Ce PDF a déjà été téléchargé. Téléchargement unique autorisé." });
+      }
+
       const product = await storage.getProduct(order.productId);
       if (!product || !product.fileUrl) {
         return res.status(404).json({ message: "Fichier PDF introuvable pour ce produit." });
       }
+
       const filePath = path.join(process.cwd(), product.fileUrl.startsWith("/") ? product.fileUrl.slice(1) : product.fileUrl);
       if (!fs.existsSync(filePath)) {
         return res.status(404).json({ message: "Le fichier PDF n'est pas encore disponible." });
       }
+
+      // Générer un token unique pour ce téléchargement
+      const downloadToken = `dl_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+
+      // Marquer le PDF comme téléchargé et enregistrer le token
+      await db.update(schema.orders)
+        .set({
+          pdfDownloaded: true,
+          downloadToken: downloadToken
+        })
+        .where(eq(schema.orders.id, orderId));
+
       const filename = `${product.name.replace(/[^a-zA-Z0-9àâäéèêëïîôùûüç\s-]/g, "").replace(/\s+/g, "_")}.pdf`;
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
       res.setHeader("Content-Type", "application/pdf");
+      res.setHeader("X-Download-Token", downloadToken);
+
       const fileStream = fs.createReadStream(filePath);
       fileStream.pipe(res);
     } catch (err) {
@@ -478,6 +502,27 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/admin/products/:id/upload-pdf", isAdmin, uploadPdf.single("pdf"), async (req: any, res) => {
+    try {
+      const productId = Number(req.params.id);
+      if (!req.file) {
+        return res.status(400).json({ message: "Aucun fichier PDF fourni" });
+      }
+
+      const fileUrl = `/uploads/pdfs/${req.file.filename}`;
+      await storage.updateProduct(productId, { fileUrl });
+
+      res.json({
+        success: true,
+        fileUrl,
+        message: "PDF uploadé avec succès"
+      });
+    } catch (err) {
+      console.error("PDF upload error:", err);
+      res.status(500).json({ message: "Erreur lors de l'upload du PDF" });
+    }
+  });
+
   app.get("/api/admin/commissions", isAdmin, async (req: any, res) => {
     const all = await storage.getAllCommissions();
     res.json(all);
@@ -560,10 +605,34 @@ export async function registerRoutes(
       aggregators: AGGREGATORS,
       countries: COUNTRY_CODES,
       demoMode: {
-        flutterwave: FLUTTERWAVE_CONFIG.isDemo,
-        paystack: PAYSTACK_CONFIG.isDemo,
+        fedapay: FEDAPAY_CONFIG.isDemo,
       },
     });
+  });
+
+  // Nouvelle route pour obtenir les méthodes de paiement disponibles pour un pays
+  app.get("/api/payment/methods/:countryCode", (req, res) => {
+    try {
+      const { countryCode } = req.params;
+
+      if (!COUNTRY_CODES[countryCode as CountryCode]) {
+        return res.status(400).json({
+          error: "Pays non supporté",
+          supportedCountries: Object.keys(COUNTRY_CODES),
+        });
+      }
+
+      const methods = getAvailableMethodsForCountry(countryCode as CountryCode);
+
+      res.json({
+        country: COUNTRY_CODES[countryCode as CountryCode],
+        methods,
+        totalMethods: methods.length,
+      });
+    } catch (error: any) {
+      console.error("Error fetching payment methods:", error);
+      res.status(500).json({ error: "Erreur interne du serveur" });
+    }
   });
 
   app.post("/api/payment/initiate", async (req: any, res) => {
@@ -603,11 +672,7 @@ export async function registerRoutes(
       }
 
       let result;
-      if (input.aggregator === "flutterwave") {
-        result = await initiateFlutterwavePayment(input, totalAmount);
-      } else {
-        result = await initiatePaystackPayment(input, totalAmount);
-      }
+      result = await initiateFedapayPayment(input, totalAmount);
 
       for (const item of verifiedItems) {
         for (let i = 0; i < item.quantity; i++) {

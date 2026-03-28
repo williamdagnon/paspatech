@@ -1,0 +1,8 @@
+[1G[0K⠙[1G[0K⠹[1G[0K
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+[1G[0K⠹[1G[0K9:56:01 AM [express] serving on port 5000
+9:58:06 AM [express] GET /api/auth/user 401 in 3ms :: {"message":"Non authentifié"}
+9:58:06 AM [express] GET /api/profile 401 in 1ms :: {"message":"Non authentifié"}
+9:58:07 AM [express] GET /api/products 304 in 18ms :: [{"id":1,"name":"Guide Culture Oignon","description":"Tout savoir sur la culture de l'oignon.","price":"500","fileUrl":"/pdfs/oignon.pdf","coverImageUrl":null,"isActive":true},{"id":2,"name":"Guide Culture Tomate","description":"Techniques modernes pour la tomate.","price":"500","fileUrl":"/pdfs/tomate.pdf","coverImageUrl":null,"isActive":true},{"id":3,"name":"Guide Culture Piment","description":"Produire le meilleur piment.","price":"500","fileUrl":"/pdfs/piment.pdf","coverImageUrl":null,"isActive":true}]
