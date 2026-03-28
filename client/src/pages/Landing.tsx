@@ -19,11 +19,11 @@ const BANNERS = [
     title: "Révolution Agricole Africaine",
     subtitle: "Le savoir technologique au service de la terre."
   },
-  {
-    image: "https://i.postimg.cc/9XgZpBLk/ouv-piment-Adobe-Stock-755060343.jpg",
-    title: "Innovation Durable",
-    subtitle: "Des techniques modernes pour une production optimisée."
-  },
+  // {
+  //   image: "https://i.postimg.cc/9XgZpBLk/ouv-piment-Adobe-Stock-755060343.jpg",
+  //   title: "Innovation Durable",
+  //   subtitle: "Des techniques modernes pour une production optimisée."
+  // },
   {
     image: "https://i.postimg.cc/tgxdVjvk/5edf43a40cb6c_maxnewsworld931830_3216771.jpg",
     title: "Expertise Locale",
@@ -33,13 +33,24 @@ const BANNERS = [
 
 export default function Landing() {
   const { data: products } = useProducts();
-  const featuredProducts = products?.slice(0, 3);
+  const featuredProducts = products?.filter((product: any) => product.isActive !== false).slice(0, 3);
   const plugin = React.useRef(Autoplay({ delay: 4000, stopOnInteraction: true }));
+
+  const getProductImage = (product: any) => {
+    if (product.coverImageUrl) return product.coverImageUrl;
+    const lower = product.name?.toLowerCase();
+    if (lower?.includes("oignon")) return "https://i.postimg.cc/MKKzZ0dh/prod_oignon.png";
+    if (lower?.includes("tomate")) return "https://i.postimg.cc/g06zFYNL/prod_tomate.png";
+    if (lower?.includes("piment")) return "https://i.postimg.cc/zfRzZJ0K/prod_piment_rouge.png";
+    if (lower?.includes("manioc")) return "https://i.postimg.cc/pXXPVQsN/prod_manioc.png";
+    if (lower?.includes("gingembre")) return "https://images.unsplash.com/photo-1615485500704-8e990f9900f7?auto=format&fit=crop&q=80&w=600";
+    return "https://images.unsplash.com/photo-1574943320219-553eb213f72d?auto=format&fit=crop&q=80&w=600";
+  };
 
   return (
     <div className="min-h-screen">
       {/* Hero / Banner Section */}
-      <section className="relative h-[600px] w-full overflow-hidden">
+      <section className="relative h-full w-full overflow-hidden m-0">
         <Carousel 
           plugins={[plugin.current]}
           className="w-full h-full"
@@ -48,12 +59,12 @@ export default function Landing() {
         >
           <CarouselContent>
             {BANNERS.map((banner, index) => (
-              <CarouselItem key={index} className="relative h-[600px] w-full">
+              <CarouselItem key={index} className="relative h-full w-full md:h-[600px]">
                 <div className="absolute inset-0 bg-black/40 z-10" />
                 <img 
                   src={banner.image} 
                   alt={banner.title}
-                  className="absolute inset-0 w-full h-full md:object-cover object-contain"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
                 <div className="relative z-20 container mx-auto px-4 h-full flex flex-col justify-center items-start">
                   <motion.div
@@ -116,7 +127,7 @@ export default function Landing() {
               >
                 <div className="aspect-square overflow-hidden">
                   <img 
-                    src={product.coverImageUrl || "https://i.postimg.cc/MKKzZ0dh/prod_oignon.png"} 
+                    src={getProductImage(product)} 
                     alt={product.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
@@ -154,7 +165,7 @@ export default function Landing() {
               <div className="text-white/80">Ambassadeurs</div>
             </div>
             <div>
-              <div className="text-4xl font-bold mb-2">154</div>
+              <div className="text-4xl font-bold mb-2">54</div>
               <div className="text-white/80">Pays Africains</div>
             </div>
             <div>

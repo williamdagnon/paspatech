@@ -585,13 +585,17 @@ export async function registerRoutes(
 
   setTimeout(async () => {
     for (const adminEmail of ADMIN_EMAILS) {
-      const user = await storage.getUserByEmail(adminEmail);
-      if (user) {
+      try {
+        const user = await storage.getUserByEmail(adminEmail);
+        if (!user) continue;
+
         const profile = await storage.getUserProfile(user.id);
         if (profile && profile.role !== "admin") {
           await storage.updateUserProfile(user.id, { role: "admin" });
           console.log(`Promoted ${adminEmail} to admin`);
         }
+      } catch (err) {
+        console.warn(`Auto-promote failed for ${adminEmail}:`, err);
       }
     }
   }, 2000);
