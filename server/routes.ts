@@ -694,6 +694,11 @@ export async function registerRoutes(
       let result;
       result = await initiateFedapayPayment(input, totalAmount);
 
+      if (result.status === "error") {
+        console.error("FedaPay initiation failed:", result);
+        return res.status(502).json({ message: result.message, details: result.error });
+      }
+
       for (const item of verifiedItems) {
         for (let i = 0; i < item.quantity; i++) {
           const order = await storage.createOrder({
@@ -733,15 +738,17 @@ export async function registerRoutes(
   app.post("/api/payment/verify", async (req: any, res) => {
     try {
       const { aggregator, transactionId } = z.object({
-        aggregator: z.enum(["flutterwave", "paystack"]),
+        aggregator: z.enum(["flutterwave", "paystack", "fedapay"]),
         transactionId: z.string(),
       }).parse(req.body);
 
       let result;
       if (aggregator === "flutterwave") {
         result = await verifyFlutterwavePayment(transactionId);
-      } else {
+      } else if (aggregator === "paystack") {
         result = await verifyPaystackPayment(transactionId);
+      } else {
+        result = await verifyFedapayPayment(transactionId);
       }
 
       if (result.verified) {
@@ -750,6 +757,7 @@ export async function registerRoutes(
 
       res.json(result);
     } catch (err: any) {
+      console.error("Payment verify error:", err);
       res.status(500).json({ message: "Erreur de vérification du paiement" });
     }
   });

@@ -194,6 +194,8 @@ export async function initiateFedapayPayment(input: PaymentInitInput, totalAmoun
   console.log(`[FedaPay] Initiation paiement: ${method.name} pour ${country.name} (${country.currency} ${totalAmount})`);
 
   const reference = generateRef("FDP");
+  const baseCallbackUrl = process.env.PAYMENT_CALLBACK_URL || process.env.APP_URL || "http://localhost:5000";
+  const callbackUrl = `${baseCallbackUrl.replace(/\/$/, "")}/api/payment/callback`;
 
   if (FEDAPAY_CONFIG.isDemo) {
     return {
@@ -223,14 +225,17 @@ export async function initiateFedapayPayment(input: PaymentInitInput, totalAmoun
       amount: totalAmount,
       currency: { code: country.currency },
       description: `Paiement pour ${input.items.length} produit(s)`,
-      callback_url: `${process.env.REPLIT_DEV_DOMAIN || ""}/payment/callback`,
+      callback_url: callbackUrl,
       customer_id: customer.id,
       custom_meta: {
         items: JSON.stringify(input.items),
         ambassador_id: input.ambassadorId,
         country: input.countryCode,
         payment_method: input.methodId,
+        payment_provider: method.provider,
       },
+      payment_method: method.provider,
+      payment_provider: method.provider,
     });
 
     // Pour les paiements mobile money, créer un token de paiement
@@ -266,6 +271,7 @@ export async function initiateFedapayPayment(input: PaymentInitInput, totalAmoun
     }
   } catch (error: any) {
     console.error(`[FedaPay] Payment error for ${country.name} with ${method.name}:`, error);
+
     if (error.message?.includes("fetch") || error.message?.includes("network")) {
       return {
         status: "demo",
@@ -279,7 +285,17 @@ export async function initiateFedapayPayment(input: PaymentInitInput, totalAmoun
         instructions: `[DÉMO] Paiement de ${totalAmount} ${country.currency} via ${method.name} simulé avec succès.`,
       };
     }
-    throw error;
+
+    return {
+      status: "error",
+      message: `Erreur FedaPay: ${error?.message || "Erreur inconnue"}`,
+      transactionId: reference,
+      aggregator: "fedapay",
+      method: method.name,
+      amount: totalAmount,
+      currency: country.currency,
+      error: error?.toString(),
+    };
   }
 }
 
