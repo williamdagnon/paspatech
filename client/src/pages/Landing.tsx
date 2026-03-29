@@ -14,15 +14,16 @@ import Autoplay from "embla-carousel-autoplay";
 import React from "react";
 
 const BANNERS = [
+  
   {
-    image: "https://i.postimg.cc/qM4mVzbj/Chat-GPT-Image-19-fevr-2026-11-40-47.png",
-    title: "Révolution Agricole Africaine",
-    subtitle: "Le savoir technologique au service de la terre."
+    image: "https://i.postimg.cc/fbKnpQ8k/Whats-App-Image-2026-03-29-at-00-04-44.jpg",
+    title: "Innovation Durable",
+    subtitle: "Des techniques modernes pour une production optimisée."
   },
   // {
-  //   image: "https://i.postimg.cc/9XgZpBLk/ouv-piment-Adobe-Stock-755060343.jpg",
-  //   title: "Innovation Durable",
-  //   subtitle: "Des techniques modernes pour une production optimisée."
+  //   image: "https://i.postimg.cc/qM4mVzbj/Chat-GPT-Image-19-fevr-2026-11-40-47.png",
+  //   title: "Révolution Agricole Africaine",
+  //   subtitle: "Le savoir technologique au service de la terre."
   // },
   // {
   //   image: "https://i.postimg.cc/tgxdVjvk/5edf43a40cb6c_maxnewsworld931830_3216771.jpg",
@@ -73,18 +74,18 @@ export default function Landing() {
                     transition={{ duration: 0.8 }}
                     className="max-w-2xl text-white"
                   >
-                    <span className="inline-block px-4 py-1 rounded-full bg-primary text-white text-sm font-bold mb-4">
+                    <span className="inline-block px-4 opacity-0 py-1 rounded-full bg-primary text-white text-sm font-bold mb-4">
                       PASPA TECH
                     </span>
-                    <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 leading-tight">
+                    <h1 className="text-5xl md:text-7xl font-display opacity-0 font-bold mb-6 leading-tight">
                       {banner.title}
                     </h1>
-                    <p className="text-xl md:text-2xl text-white/90 mb-8 max-w-xl">
+                    <p className="text-xl md:text-2xl opacity-0 text-white/90 mb-8 max-w-xl">
                       {banner.subtitle}
                     </p>
                     <div className="flex gap-4">
                       <Link href="/products">
-                        <Button size="lg" className="bg-primary hover:bg-primary/90 text-white h-12 px-8">
+                        <Button size="lg" className="bg-primary opacity-0 hover:bg-primary/90 text-white h-12 px-8">
                           Voir les Guides
                         </Button>
                       </Link>
